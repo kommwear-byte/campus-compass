@@ -1,0 +1,15 @@
+# Environment variables — NEVER commit these
+.env
+*.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Node (if team adds a build step later)
+node_modules/
+dist/
