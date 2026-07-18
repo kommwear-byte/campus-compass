@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Campus Compass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700;800&family=Syne:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ════════════════════════════════════
+   COLLEGE MODE VARIABLES
+════════════════════════════════════ */
+[data-mode="col"]{
+  --bg:#07080f;--bg2:#0d0f1c;--bg3:#131626;
+  --card:#101320;--card2:#181b2e;--card3:#1f2338;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--border3:rgba(255,255,255,.19);
+  --a1:#c9a84c;--a2:#f0cc7a;--a-dim:rgba(201,168,76,.10);--a-b:rgba(201,168,76,.26);
+  --a3:#3dd6c0;--a3-dim:rgba(61,214,192,.10);--a3-b:rgba(61,214,192,.25);
+  --a4:#9d7fe8;--a4-dim:rgba(157,127,232,.10);--a4-b:rgba(157,127,232,.25);
+  --a5:#e0635a;--a5-dim:rgba(224,99,90,.10);--a5-b:rgba(224,99,90,.25);
+  --a6:#5baee8;--a6-dim:rgba(91,174,232,.10);--a6-b:rgba(91,174,232,.25);
+  --t1:#e8e4dc;--t2:#9ea3b5;--t3:#5c6178;--t4:#3a3f55;
+  --r:10px;--r2:14px;--r3:20px;--rbtn:8px;
+  --fh:'Playfair Display',Georgia,serif;
+  --fb:'Syne',system-ui,sans-serif;
+  --card-shadow:0 2px 8px rgba(0,0,0,.4);
+  --hover-shadow:0 12px 40px rgba(0,0,0,.5);
+  --mesh:radial-gradient(ellipse 700px 500px at 80% 5%,rgba(201,168,76,.05),transparent 70%),radial-gradient(ellipse 500px 400px at 10% 85%,rgba(61,214,192,.03),transparent 70%);
+}
+
+/* ════════════════════════════════════
+   HIGH SCHOOL MODE VARIABLES
+════════════════════════════════════ */
+[data-mode="hs"]{
+  --bg:#060010;--bg2:#0b001e;--bg3:#110028;
+  --card:#0f0024;--card2:#160032;--card3:#1d0042;
+  --border:rgba(168,85,247,.10);--border2:rgba(168,85,247,.20);--border3:rgba(168,85,247,.38);
+  --a1:#a855f7;--a2:#c084fc;--a-dim:rgba(168,85,247,.12);--a-b:rgba(168,85,247,.32);
+  --a3:#ec4899;--a3-dim:rgba(236,72,153,.12);--a3-b:rgba(236,72,153,.30);
+  --a4:#06b6d4;--a4-dim:rgba(6,182,212,.12);--a4-b:rgba(6,182,212,.28);
+  --a5:#34c98a;--a5-dim:rgba(52,201,138,.12);--a5-b:rgba(52,201,138,.28);
+  --a6:#f59e0b;--a6-dim:rgba(245,158,11,.12);--a6-b:rgba(245,158,11,.28);
+  --t1:#f0ebff;--t2:#c4b5fd;--t3:#7c6fa0;--t4:#4a3f6b;
+  --r:18px;--r2:22px;--r3:28px;--rbtn:100px;
+  --fh:'Space Grotesk',system-ui,sans-serif;
+  --fb:'Inter',system-ui,sans-serif;
+  --card-shadow:0 0 20px rgba(168,85,247,.06);
+  --hover-shadow:0 8px 32px rgba(168,85,247,.22);
+  --mesh:radial-gradient(ellipse 600px 500px at 20% 10%,rgba(168,85,247,.10),transparent 60%),radial-gradient(ellipse 500px 400px at 80% 80%,rgba(236,72,153,.07),transparent 60%);
+}
+
+/* ── BASE ── */
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--t1);
+  font-family:var(--fb);min-height:100vh;
+  overflow-x:hidden;transition:background .5s,color .5s;
+}
+/* ── COLLEGE BACKGROUND: Dark Academic grain + subtle gold geometry ── */
+[data-mode="col"] body,body[data-mode="col"]{background:#07080f}
+
+/* Grain overlay — college only */
+[data-mode="col"]::after,body[data-mode="col"]::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9998;opacity:.7;
+}
+
+/* HS background: deep purple, no grain */
+[data-mode="hs"]::after,body[data-mode="hs"]::after{content:none}
+
+/* Shared star canvas */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+
+/* College stars: small, white, very dim & slow */
+.star{
+  position:absolute;border-radius:50%;
+  animation:twinkle var(--d,4s) ease-in-out infinite var(--dl,0s);
+}
+[data-mode="col"] .star{background:#fff}
+/* HS stars: tinted purple/pink/cyan, brighter, faster */
+[data-mode="hs"] .star{background:var(--sc,#fff)}
+
+@keyframes twinkle{0%,100%{opacity:var(--op,.15)}50%{opacity:var(--op2,.7)}}
+
+/* College mesh: two faint gold/teal radial glows */
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;transition:background .7s}
+[data-mode="col"] .mesh{
+  background:
+    radial-gradient(ellipse 800px 600px at 85% 0%,  rgba(201,168,76,.06), transparent 65%),
+    radial-gradient(ellipse 600px 500px at 5%  90%, rgba(61,214,192,.04), transparent 65%),
+    radial-gradient(ellipse 400px 300px at 50% 50%, rgba(157,127,232,.02),transparent 70%);
+}
+
+/* College: subtle diagonal rule lines like aged paper */
+.col-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(201,168,76,.025) 80px),
+    repeating-linear-gradient(90deg,transparent, transparent 79px, rgba(201,168,76,.015) 80px);
+}
+[data-mode="hs"] .col-grid{display:none}
+
+/* HS mesh: large animated gradient blobs */
+[data-mode="hs"] .mesh{
+  background:
+    radial-gradient(ellipse 700px 600px at 15% 5%,  rgba(168,85,247,.14), transparent 60%),
+    radial-gradient(ellipse 500px 500px at 85% 80%, rgba(236,72,153,.10), transparent 55%),
+    radial-gradient(ellipse 400px 350px at 50% 45%, rgba(6,182,212,.05),  transparent 60%);
+  animation:blobDrift 12s ease-in-out infinite alternate;
+}
+@keyframes blobDrift{
+  0%  {background:
+    radial-gradient(ellipse 700px 600px at 15% 5%,  rgba(168,85,247,.14), transparent 60%),
+    radial-gradient(ellipse 500px 500px at 85% 80%, rgba(236,72,153,.10), transparent 55%),
+    radial-gradient(ellipse 400px 350px at 50% 45%, rgba(6,182,212,.05),  transparent 60%)}
+  50% {background:
+    radial-gradient(ellipse 750px 550px at 25% 15%, rgba(168,85,247,.18), transparent 58%),
+    radial-gradient(ellipse 550px 480px at 75% 70%, rgba(236,72,153,.13), transparent 52%),
+    radial-gradient(ellipse 450px 380px at 60% 35%, rgba(6,182,212,.07),  transparent 58%)}
+  100%{background:
+    radial-gradient(ellipse 680px 620px at 10% 20%, rgba(168,85,247,.12), transparent 62%),
+    radial-gradient(ellipse 520px 520px at 90% 75%, rgba(236,72,153,.09), transparent 58%),
+    radial-gradient(ellipse 420px 360px at 40% 55%, rgba(6,182,212,.06),  transparent 62%)}
+}
+
+/* HS: dot grid overlay */
+.hs-dots{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle, rgba(168,85,247,.18) 1px, transparent 1px);
+  background-size:36px 36px;
+  mask-image:radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 100%);
+}
+[data-mode="col"] .hs-dots{display:none}
+
+/* HS: aurora strip at top */
+.hs-aurora{
+  position:fixed;top:0;left:0;right:0;height:260px;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(168,85,247,.18) 0%,
+    rgba(236,72,153,.08) 45%,
+    transparent 100%);
+  filter:blur(40px);
+  animation:auroraPulse 6s ease-in-out infinite alternate;
+}
+@keyframes auroraPulse{
+  0%  {opacity:.7;transform:scaleX(1)}
+  50% {opacity:1; transform:scaleX(1.04)}
+  100%{opacity:.6;transform:scaleX(.97)}
+}
+[data-mode="col"] .hs-aurora{display:none}
+
+/* College: corner vignette for drama */
+.col-vignette{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(4,5,10,.7) 100%);
+}
+[data-mode="hs"] .col-vignette{display:none}
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ═══════════════════
+   HEADER
+═══════════════════ */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 1.75rem;border-bottom:1px solid var(--border);
+  background:rgba(6,5,12,.88);backdrop-filter:blur(20px);
+  position:sticky;top:0;z-index:200;gap:1rem;flex-wrap:wrap;
+  transition:border-color .5s,background .5s;
+}
+[data-mode="hs"] .hdr{background:rgba(5,0,14,.88)}
+.logo{display:flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none}
+.logo-icon{
+  width:32px;height:32px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:.95rem;font-weight:700;flex-shrink:0;
+  background:linear-gradient(135deg,var(--a1),var(--a2));color:#080808;
+  transition:all .3s;
+}
+[data-mode="hs"] .logo-icon{box-shadow:0 0 16px rgba(168,85,247,.4)}
+.logo-text{
+  font-family:var(--fh);font-size:1.1rem;font-weight:700;
+  background:linear-gradient(135deg,var(--t1) 20%,var(--a2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  transition:all .4s;
+}
+[data-mode="hs"] .logo-text{background:linear-gradient(135deg,#fff,var(--a1) 50%,var(--a3));-webkit-background-clip:text;background-clip:text}
+.logo-badge{
+  font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--a1);background:var(--a-dim);border:1px solid var(--a-b);
+  padding:.14rem .48rem;border-radius:100px;transition:all .4s;
+}
+.hdr-nav{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.hdr-btn{
+  font-family:var(--fb);font-size:.72rem;font-weight:600;color:var(--t3);
+  background:none;border:1px solid var(--border2);border-radius:var(--rbtn);
+  padding:.28rem .8rem;cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.hdr-btn:hover{color:var(--t1);border-color:var(--border3);background:var(--card)}
+.hdr-btn.on{color:var(--a1);border-color:var(--a-b);background:var(--a-dim)}
+
+/* ═══════════════════
+   PAGES
+═══════════════════ */
+.page{display:none;animation:rise .4s cubic-bezier(.25,.46,.45,.94) both}
+.page.active{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════
+   HOME — MODE SELECTOR
+═══════════════════ */
+.home-wrap{max-width:1080px;margin:0 auto;padding:3.5rem 1.5rem 4rem}
+.home-top{text-align:center;margin-bottom:3rem}
+.home-kicker{
+  display:inline-flex;align-items:center;gap:.45rem;
+  font-size:.63rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--t3);background:var(--card);border:1px solid var(--border2);
+  padding:.28rem .85rem;border-radius:100px;margin-bottom:1.5rem;
+}
+.home-h1{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:clamp(2.2rem,5vw,3.8rem);font-weight:700;line-height:1.1;
+  letter-spacing:-.025em;color:var(--t1);margin-bottom:1rem;
+}
+.home-sub{font-size:.92rem;color:var(--t2);max-width:440px;margin:0 auto;line-height:1.75}
+
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;max-width:880px;margin:0 auto}
+
+/* College card */
+.mc-col{
+  background:var(--card);border:1px solid rgba(201,168,76,.18);
+  border-radius:20px;padding:2.25rem 2rem;cursor:pointer;
+  position:relative;overflow:hidden;text-align:center;
+  transition:all .25s cubic-bezier(.25,.46,.45,.94);
+}
+.mc-col:hover{transform:translateY(-5px);border-color:rgba(201,168,76,.4);box-shadow:0 20px 60px rgba(201,168,76,.12)}
+.mc-col-glow{
+  position:absolute;width:260px;height:260px;border-radius:50%;
+  top:-80px;left:50%;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(circle,rgba(201,168,76,.18),transparent 70%);
+}
+.mc-col-icon{font-size:3rem;margin-bottom:1rem;display:block}
+.mc-col-title{
+  font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;
+  color:#e8e4dc;margin-bottom:.55rem;letter-spacing:-.02em;
+}
+.mc-col-desc{font-family:'Syne',sans-serif;font-size:.82rem;color:#9ea3b5;line-height:1.65;margin-bottom:1.5rem}
+.mc-col-btn{
+  display:inline-flex;align-items:center;gap:.5rem;font-family:'Syne',sans-serif;
+  font-size:.83rem;font-weight:700;padding:.72rem 1.6rem;border-radius:8px;
+  border:none;cursor:pointer;transition:all .2s;
+  background:linear-gradient(135deg,#c9a84c,#f0cc7a);color:#0b0b0b;
+}
+.mc-col-btn:hover{box-shadow:0 8px 24px rgba(201,168,76,.45);transform:translateY(-1px)}
+.mc-col-tags{display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap;margin-top:1.25rem}
+.mc-col-tag{
+  font-size:.63rem;font-weight:600;padding:.18rem .58rem;
+  border-radius:6px;border:1px solid rgba(201,168,76,.25);
+  color:rgba(201,168,76,.85);background:rgba(201,168,76,.08);
+}
+
+/* High School card */
+.mc-hs{
+  background:linear-gradient(135deg,#0f0028,#180040);
+  border:1px solid rgba(168,85,247,.28);
+  border-radius:20px;padding:2.25rem 2rem;cursor:pointer;
+  position:relative;overflow:hidden;text-align:center;
+  transition:all .25s cubic-bezier(.25,.46,.45,.94);
+}
+.mc-hs:hover{transform:translateY(-5px);border-color:rgba(168,85,247,.55);box-shadow:0 20px 60px rgba(168,85,247,.22)}
+.mc-hs-glow{
+  position:absolute;width:300px;height:300px;border-radius:50%;
+  top:-90px;left:50%;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(circle,rgba(168,85,247,.22),rgba(236,72,153,.08) 50%,transparent 70%);
+}
+.mc-hs-icon{font-size:3rem;margin-bottom:1rem;display:block}
+.mc-hs-title{
+  font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;
+  background:linear-gradient(135deg,#fff,#c084fc 50%,#ec4899);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:.55rem;
+}
+.mc-hs-desc{font-family:'Inter',sans-serif;font-size:.82rem;color:#c4b5fd;line-height:1.65;margin-bottom:1.5rem}
+.mc-hs-btn{
+  display:inline-flex;align-items:center;gap:.5rem;font-family:'Inter',sans-serif;
+  font-size:.83rem;font-weight:700;padding:.72rem 1.6rem;border-radius:100px;
+  border:none;cursor:pointer;transition:all .2s;
+  background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff;
+}
+.mc-hs-btn:hover{box-shadow:0 8px 28px rgba(168,85,247,.5);transform:translateY(-1px)}
+.mc-hs-tags{display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap;margin-top:1.25rem}
+.mc-hs-tag{
+  font-size:.63rem;font-weight:600;padding:.18rem .58rem;
+  border-radius:100px;border:1px solid rgba(168,85,247,.3);
+  color:rgba(192,132,252,.9);background:rgba(168,85,247,.10);
+}
+
+/* ═══════════════════
+   DIRECTORY
+═══════════════════ */
+.dir-wrap{max-width:1200px;margin:0 auto;padding:1.75rem 1.5rem 4rem}
+.dir-head{margin-bottom:1.75rem}
+.pg-title{font-family:var(--fh);font-size:1.85rem;font-weight:700;letter-spacing:-.02em;color:var(--t1);margin-bottom:.3rem}
+[data-mode="hs"] .pg-title{
+  background:linear-gradient(135deg,#fff,var(--a2) 60%,var(--a3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.pg-sub{font-size:.8rem;color:var(--t3);margin-bottom:1.2rem}
+.dir-controls{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.dir-search{
+  flex:1;min-width:185px;max-width:350px;font-family:var(--fb);font-size:.84rem;
+  color:var(--t1);background:var(--card);border:1.5px solid var(--border2);
+  border-radius:var(--r);padding:.65rem 1rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.dir-search::placeholder{color:var(--t3)}
+.dir-search:focus{border-color:var(--a1);box-shadow:0 0 0 3px var(--a-dim)}
+.filter-row{display:flex;gap:.32rem;flex-wrap:wrap}
+.fpill{
+  font-size:.68rem;font-weight:600;color:var(--t3);background:var(--card2);
+  border:1px solid var(--border2);padding:.24rem .72rem;border-radius:100px;cursor:pointer;transition:all .15s;
+}
+.fpill:hover{color:var(--t2)}
+.fpill.on{color:var(--a1);background:var(--a-dim);border-color:var(--a-b)}
+.cat-section{margin-bottom:2.2rem}
+.cat-label{
+  font-size:.6rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;
+}
+.cat-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem}
+.stile{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:.95rem 1rem;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all .2s cubic-bezier(.25,.46,.45,.94);
+  box-shadow:var(--card-shadow);
+}
+.stile:hover{transform:translateY(-3px);border-color:var(--border2);box-shadow:var(--hover-shadow)}
+[data-mode="col"] .stile:hover{border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.03)}
+[data-mode="hs"] .stile:hover{border-color:var(--a-b);background:rgba(168,85,247,.05)}
+.stile-em{font-size:1.25rem;margin-bottom:.45rem;display:block}
+.stile-name{font-family:var(--fh);font-size:.88rem;font-weight:600;color:var(--t1);margin-bottom:.22rem;line-height:1.3}
+.stile-meta{font-size:.67rem;color:var(--t3);margin-bottom:.5rem}
+.stile-tags{display:flex;gap:.25rem;flex-wrap:wrap}
+.stile-tag{font-size:.58rem;font-weight:600;padding:.15rem .48rem;border-radius:100px;border:1px solid var(--a-b);color:var(--a1);background:var(--a-dim)}
+.stile-vibe{font-size:.58rem;font-weight:600;padding:.15rem .48rem;border-radius:100px;border:1px solid var(--border2);color:var(--t3);background:var(--card2)}
+.stile-arrow{position:absolute;bottom:.75rem;right:.8rem;font-size:.7rem;color:var(--t4);transition:all .2s}
+.stile:hover .stile-arrow{color:var(--t2);transform:translateX(3px)}
+.no-results{text-align:center;padding:3rem 1rem;color:var(--t3);font-size:.84rem}
+
+/* ═══════════════════
+   QUIZ
+═══════════════════ */
+.quiz-wrap{max-width:560px;margin:0 auto;padding:2rem 1.5rem 3.5rem}
+.qbanner{
+  display:flex;align-items:center;gap:.8rem;background:var(--card);
+  border:1px solid var(--border2);border-radius:var(--r2);padding:.85rem 1.1rem;margin-bottom:1.75rem;
+}
+.qb-icon{font-size:1.3rem;flex-shrink:0}
+.qb-name{font-family:var(--fh);font-size:.92rem;font-weight:600;color:var(--t1)}
+.qb-meta{font-size:.68rem;color:var(--t3);margin-top:.07rem}
+.prog-bar{display:flex;gap:.38rem;margin-bottom:.45rem}
+.prog-seg{flex:1;height:3px;border-radius:100px;background:var(--border2);transition:background .4s}
+.prog-seg.done,.prog-seg.on{background:var(--a1)}
+.prog-meta{display:flex;justify-content:space-between;font-size:.67rem;color:var(--t3);font-weight:600;margin-bottom:2rem}
+.prog-meta .cur{color:var(--a1)}
+.q-block{display:none;animation:rise .35s ease both}
+.q-block.active{display:block}
+.q-badge{
+  display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:.2rem .68rem;border-radius:100px;margin-bottom:.8rem;
+  color:var(--a1);background:var(--a-dim);border:1px solid var(--a-b);
+}
+.q-h{font-family:var(--fh);font-size:1.8rem;font-weight:700;line-height:1.15;letter-spacing:-.02em;color:var(--t1);margin-bottom:.38rem}
+[data-mode="hs"] .q-h{font-size:1.7rem}
+.q-sub{font-size:.79rem;color:var(--t3);margin-bottom:1.5rem;line-height:1.6}
+.q-field{
+  width:100%;font-family:var(--fb);font-size:.9rem;color:var(--t1);
+  background:var(--card);border:1.5px solid var(--border2);
+  border-radius:var(--r);padding:.82rem 1.05rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;
+}
+.q-field:focus{border-color:var(--a1);box-shadow:0 0 0 4px var(--a-dim)}
+.q-field::placeholder{color:var(--t3)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);cursor:pointer}
+.maj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.42rem;margin-bottom:.6rem}
+.maj-tile{
+  display:flex;align-items:center;gap:.52rem;padding:.68rem .82rem;
+  border-radius:var(--r);border:1.5px solid var(--border2);background:var(--card);
+  cursor:pointer;transition:all .15s;
+}
+.maj-tile:hover,.maj-tile.pk{border-color:var(--a1);background:var(--a-dim)}
+.maj-tile.pk .mtl{color:var(--a1)}
+.mti{font-size:.98rem;flex-shrink:0}
+.mtl{font-size:.74rem;font-weight:500;color:var(--t2)}
+.grade-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.42rem;margin-bottom:.6rem}
+.grade-tile{
+  display:flex;flex-direction:column;align-items:center;padding:.82rem .4rem;
+  border-radius:var(--r);border:1.5px solid var(--border2);background:var(--card);
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.grade-tile:hover,.grade-tile.pk{border-color:var(--a1);background:var(--a-dim)}
+.grade-tile.pk .gtn,.grade-tile.pk .gtl{color:var(--a1)}
+.gtn{font-family:var(--fh);font-size:1.4rem;font-weight:700;color:var(--t2)}
+.gtl{font-size:.62rem;color:var(--t3);font-weight:500}
+.int-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.38rem;margin-bottom:.6rem}
+.int-tile{
+  display:flex;align-items:center;gap:.42rem;padding:.6rem .72rem;
+  border-radius:var(--r);border:1.5px solid var(--border2);background:var(--card);
+  cursor:pointer;transition:all .15s;font-size:.72rem;font-weight:500;color:var(--t2);
+}
+.int-tile:hover,.int-tile.pk{border-color:var(--a1);background:var(--a-dim);color:var(--a1)}
+.int-icon{font-size:.88rem;flex-shrink:0}
+.q-nav{display:flex;align-items:center;justify-content:space-between;margin-top:1.6rem;gap:1rem}
+.q-back{font-family:var(--fb);font-size:.76rem;color:var(--t3);background:none;border:none;cursor:pointer;padding:.42rem;transition:color .15s}
+.q-back:hover{color:var(--t1)}
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;font-family:var(--fb);
+  font-size:.84rem;font-weight:700;padding:.76rem 1.7rem;
+  border-radius:var(--rbtn);border:none;cursor:pointer;
+  transition:all .2s cubic-bezier(.25,.46,.45,.94);
+  background:linear-gradient(135deg,var(--a1),var(--a2));color:#0a0a0a;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--a-dim)}
+[data-mode="hs"] .btn{color:#fff;box-shadow:0 4px 20px rgba(168,85,247,.3)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ═══════════════════
+   LOADING
+═══════════════════ */
+.load-wrap{max-width:440px;margin:0 auto;padding:5rem 1.5rem;text-align:center}
+.loader-orb{position:relative;width:62px;height:62px;margin:0 auto 1.65rem}
+.lo-core{
+  position:absolute;inset:16px;border-radius:50%;
+  background:linear-gradient(135deg,var(--a1),var(--a2));
+  animation:pulse 1.5s ease infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--a-b)}50%{box-shadow:0 0 0 12px transparent}}
+.lo-ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--a1);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-title{font-family:var(--fh);font-size:1.6rem;font-weight:700;margin-bottom:.42rem}
+.load-sub{font-size:.79rem;color:var(--t3);margin-bottom:1.65rem;line-height:1.65}
+.load-url{font-size:.68rem;color:var(--t3);background:var(--card);padding:.42rem .88rem;border-radius:var(--r);border:1px solid var(--border2);margin-bottom:1.65rem;word-break:break-all}
+.load-steps{display:flex;flex-direction:column;gap:.42rem}
+.ls{display:flex;align-items:center;gap:.72rem;padding:.62rem .92rem;border-radius:var(--r);border:1px solid var(--border2);background:var(--card);font-size:.77rem;color:var(--t3);text-align:left;transition:all .3s}
+.ls.act{border-color:var(--a-b);background:var(--a-dim);color:var(--t1);font-weight:500}
+.ls.done{border-color:rgba(52,201,138,.25);background:rgba(52,201,138,.08);color:#34c98a}
+.ls-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .3s}
+.ls.act .ls-dot{background:var(--a1);animation:blink 1s ease infinite}
+.ls.done .ls-dot{background:#34c98a}
+@keyframes blink{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+
+/* ═══════════════════
+   DASHBOARD
+═══════════════════ */
+.dash-wrap{max-width:1150px;margin:0 auto;padding:1.75rem 1.5rem 4rem}
+.compare-strip{
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:.72rem .95rem;margin-bottom:1.65rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+}
+.cs-lbl{font-size:.67rem;font-weight:600;color:var(--t3);white-space:nowrap}
+.cs-sch{
+  display:flex;align-items:center;background:var(--card2);border:1px solid var(--border2);
+  border-radius:100px;padding:.22rem .68rem;cursor:pointer;transition:all .15s;
+}
+.cs-sch:hover{border-color:var(--border3)}
+.cs-sch.act{border-color:var(--a-b);background:var(--a-dim)}
+.cs-sname{font-size:.67rem;font-weight:600;color:var(--t2)}
+.cs-sch.act .cs-sname{color:var(--a1)}
+.cs-add{
+  font-family:var(--fb);font-size:.67rem;font-weight:600;color:var(--t3);
+  background:none;border:1px dashed var(--border2);border-radius:100px;
+  padding:.22rem .68rem;cursor:pointer;transition:all .15s;
+}
+.cs-add:hover{color:var(--t2);border-color:var(--border3)}
+.dash-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.4rem}
+.dash-sch-card{
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:1.05rem 1.3rem;display:flex;align-items:flex-start;gap:.9rem;flex:1;min-width:265px;
+}
+[data-mode="hs"] .dash-sch-card{box-shadow:0 0 30px rgba(168,85,247,.08)}
+.dsc-icon{font-size:1.65rem;flex-shrink:0;margin-top:.1rem}
+.dsc-body{flex:1}
+.dsc-mode{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--a1);margin-bottom:.16rem}
+.dsc-name{font-family:var(--fh);font-size:1.38rem;font-weight:700;line-height:1.15;color:var(--t1);margin-bottom:.32rem}
+[data-mode="hs"] .dsc-name{font-size:1.3rem}
+.dsc-pills{display:flex;flex-wrap:wrap;gap:.28rem}
+.dash-actions{display:flex;flex-direction:column;align-items:flex-end;gap:.38rem}
+.act-btn{
+  font-family:var(--fb);font-size:.71rem;color:var(--t3);background:none;
+  border:1px solid var(--border2);border-radius:var(--rbtn);
+  padding:.26rem .82rem;cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.act-btn:hover{color:var(--t1);border-color:var(--border3);background:var(--card)}
+
+/* Match score */
+.match-wrap{margin-bottom:1.3rem}
+.match-top{display:flex;justify-content:space-between;margin-bottom:.38rem}
+.match-lbl{font-size:.7rem;font-weight:600;color:var(--t3)}
+.match-pct{font-family:var(--fh);font-size:1.08rem;font-weight:700;color:var(--a1)}
+.match-bg{height:6px;background:var(--bg3);border-radius:100px;overflow:hidden}
+.match-fill{height:100%;background:linear-gradient(90deg,var(--a1),var(--a2));border-radius:100px;transition:width 1.3s cubic-bezier(.25,.46,.45,.94)}
+
+/* Deadline alert */
+.dl-alert{
+  display:flex;align-items:center;gap:.7rem;
+  background:rgba(224,99,90,.08);border:1px solid rgba(224,99,90,.25);
+  border-radius:var(--r);padding:.65rem .95rem;margin-bottom:1.2rem;
+  font-size:.77rem;color:#e0635a;font-weight:500;
+}
+.dl-icon{font-size:.95rem;flex-shrink:0}
+
+/* Pills */
+.pill{font-size:.64rem;font-weight:600;padding:.2rem .66rem;border-radius:100px;border:1px solid;display:inline-block}
+.pill-a{color:var(--a1);background:var(--a-dim);border-color:var(--a-b)}
+.pill-b{color:var(--a3);background:var(--a3-dim);border-color:var(--a3-b)}
+.pill-c{color:var(--a4);background:var(--a4-dim);border-color:var(--a4-b)}
+.pill-d{color:var(--a5);background:var(--a5-dim);border-color:var(--a5-b)}
+.pill-e{color:var(--a6);background:var(--a6-dim);border-color:var(--a6-b)}
+
+/* Source badge */
+.src-badge{
+  font-size:.62rem;color:var(--t3);background:var(--card2);border:1px solid var(--border);
+  border-radius:var(--r);padding:.3rem .78rem;display:flex;align-items:center;gap:.36rem;
+  margin-bottom:1.35rem;flex-wrap:wrap;
+}
+.src-dot{width:5px;height:5px;border-radius:50%;background:var(--a1);animation:blink 2s ease infinite;flex-shrink:0}
+.src-link{
+  display:inline-flex;align-items:center;margin-left:auto;font-size:.64rem;font-weight:600;
+  color:var(--a1);text-decoration:none;padding:.16rem .6rem;border-radius:100px;
+  border:1px solid var(--a-b);background:var(--a-dim);transition:all .15s;white-space:nowrap;
+}
+.src-link:hover{background:var(--a1);color:#0a0a0a}
+[data-mode="hs"] .src-link:hover{color:#fff}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:.72rem;margin-bottom:1.5rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:.95rem 1.15rem;position:relative;overflow:hidden;box-shadow:var(--card-shadow)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px}
+.sc-a::before{background:linear-gradient(90deg,var(--a1),var(--a2))}
+.sc-b::before{background:linear-gradient(90deg,var(--a3),var(--a2))}
+.sc-c::before{background:linear-gradient(90deg,var(--a4),var(--a3))}
+.sc-d::before{background:linear-gradient(90deg,var(--a5),var(--a6))}
+.stat-val{font-family:var(--fh);font-size:1.65rem;font-weight:700;line-height:1;margin-bottom:.2rem}
+.sc-a .stat-val{color:var(--a2)}.sc-b .stat-val{color:var(--a3)}.sc-c .stat-val{color:var(--a4)}.sc-d .stat-val{color:var(--a5)}
+.stat-lbl{font-size:.65rem;color:var(--t3);font-weight:500}
+
+/* Tabs */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{
+  font-family:var(--fb);font-size:.74rem;font-weight:600;color:var(--t3);
+  background:transparent;border:none;cursor:pointer;padding:.68rem 1.1rem;
+  border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .18s;
+}
+.tab-btn:hover{color:var(--t2)}
+.tab-btn.on{color:var(--a1);border-bottom-color:var(--a1)}
+.tab-pane{display:none;animation:rise .3s ease}
+.tab-pane.on{display:block}
+
+/* Section label */
+.sec-lbl{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:.85rem;display:flex;align-items:center;gap:.58rem}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Section link bar */
+.sec-link-bar{margin-bottom:.65rem}
+.sec-link{
+  display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:600;
+  color:var(--t3);text-decoration:none;padding:.26rem .82rem;border-radius:100px;
+  border:1px solid var(--border2);background:var(--card);transition:all .18s;
+}
+.sec-link:hover{color:var(--t1);border-color:var(--border3);background:var(--card2);transform:translateY(-1px)}
+
+/* Opportunity cards */
+.opp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:.82rem;margin-bottom:1.9rem}
+.oc{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
+  padding:1.15rem;position:relative;overflow:hidden;
+  transition:all .2s cubic-bezier(.25,.46,.45,.94);box-shadow:var(--card-shadow);
+}
+[data-mode="hs"] .oc{
+  background:linear-gradient(var(--card),var(--card)) padding-box,
+             linear-gradient(135deg,rgba(168,85,247,.2),rgba(236,72,153,.1)) border-box;
+  border:1px solid transparent;
+}
+.oc:hover{transform:translateY(-3px);box-shadow:var(--hover-shadow)}
+[data-mode="col"] .oc:hover{border-color:var(--border2)}
+.oc-bar{position:absolute;top:0;left:0;right:0;height:3px}
+.ca .oc-bar{background:linear-gradient(90deg,var(--a1),var(--a2))}
+.cb .oc-bar{background:linear-gradient(90deg,var(--a3),var(--a2))}
+.cc .oc-bar{background:linear-gradient(90deg,var(--a4),var(--a3))}
+.cd .oc-bar{background:linear-gradient(90deg,var(--a5),var(--a6))}
+.ce .oc-bar{background:linear-gradient(90deg,var(--a6),var(--a4))}
+.oc-type{font-size:.58rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:.32rem}
+.ca .oc-type{color:var(--a1)}.cb .oc-type{color:var(--a3)}.cc .oc-type{color:var(--a4)}.cd .oc-type{color:var(--a5)}.ce .oc-type{color:var(--a6)}
+.oc-title{font-family:var(--fh);font-size:.96rem;font-weight:600;line-height:1.3;color:var(--t1);margin-bottom:.32rem}
+.oc-desc{font-size:.74rem;color:var(--t2);line-height:1.6;margin-bottom:.75rem}
+.oc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:.58rem;border-top:1px solid var(--border);gap:.38rem;flex-wrap:wrap}
+.oc-src{font-size:.6rem;color:var(--t3);display:flex;align-items:center;gap:.26rem}
+.oc-src-dot{width:4px;height:4px;border-radius:50%;background:var(--a1);flex-shrink:0}
+.oc-dl{font-size:.64rem;font-weight:600;color:#e0635a}
+.oc-link{
+  display:inline-flex;align-items:center;font-size:.64rem;font-weight:600;
+  text-decoration:none;padding:.18rem .58rem;border-radius:100px;border:1px solid;
+  transition:all .15s;white-space:nowrap;
+}
+.ca .oc-link{color:var(--a1);border-color:var(--a-b);background:var(--a-dim)}
+.ca .oc-link:hover{background:var(--a1);color:#0a0a0a}
+.cb .oc-link{color:var(--a3);border-color:var(--a3-b);background:var(--a3-dim)}
+.cb .oc-link:hover{background:var(--a3);color:#0a0a0a}
+[data-mode="hs"] .cb .oc-link:hover{color:#fff}
+.cc .oc-link{color:var(--a4);border-color:var(--a4-b);background:var(--a4-dim)}
+.cc .oc-link:hover{background:var(--a4);color:#0a0a0a}
+[data-mode="hs"] .cc .oc-link:hover{color:#fff}
+.cd .oc-link{color:var(--a5);border-color:var(--a5-b);background:var(--a5-dim)}
+.cd .oc-link:hover{background:var(--a5);color:#fff}
+[data-mode="col"] .cd .oc-link:hover{color:#0a0a0a}
+.ce .oc-link{color:var(--a6);border-color:var(--a6-b);background:var(--a6-dim)}
+.ce .oc-link:hover{background:var(--a6);color:#0a0a0a}
+
+/* Schedule */
+.week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.72rem;margin-bottom:1.5rem}
+.day-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;box-shadow:var(--card-shadow)}
+.day-hd{padding:.62rem .95rem;background:var(--card2);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.day-nm{font-size:.67rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t1)}
+.day-tp{font-size:.59rem;color:var(--t3)}
+.tb{display:flex;align-items:flex-start;gap:.52rem;padding:.48rem .95rem;border-bottom:1px solid var(--border);transition:background .15s}
+.tb:last-child{border-bottom:none}.tb:hover{background:var(--bg3)}
+.tb-t{font-size:.61rem;font-weight:700;color:var(--t3);min-width:44px;padding-top:.03rem}
+.tb-dot{width:6px;height:6px;border-radius:50%;margin-top:.26rem;flex-shrink:0}
+.tb-b{flex:1}
+.tb-n{font-size:.73rem;font-weight:500;color:var(--t1);line-height:1.3}
+.tb-w{font-size:.63rem;color:var(--t3);margin-top:.04rem}
+.tb-link{font-size:.6rem;color:var(--t3);text-decoration:none;margin-left:.18rem;transition:color .15s}
+.tb-link:hover{color:var(--a1)}
+
+/* Workload */
+.wl-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.wl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.05rem;box-shadow:var(--card-shadow)}
+.wl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem}
+.wl-title{font-family:var(--fh);font-size:.88rem;font-weight:600;color:var(--t1)}
+.wl-score{font-size:1.12rem;font-weight:700}
+.wl-bg{height:5px;background:var(--bg3);border-radius:100px;overflow:hidden;margin-bottom:.28rem}
+.wl-bar{height:100%;border-radius:100px;transition:width 1.2s cubic-bezier(.25,.46,.45,.94)}
+.wl-note{font-size:.65rem;color:var(--t3)}
+
+/* Prose card */
+.prose-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
+  padding:1.45rem;line-height:1.8;color:var(--t2);font-size:.81rem;margin-bottom:1.25rem;
+  box-shadow:var(--card-shadow);
+}
+.prose-head{display:flex;align-items:center;justify-content:space-between;gap:.9rem;margin-bottom:.45rem;margin-top:1.15rem}
+.prose-head:first-child{margin-top:0}
+.prose-head h3{font-family:var(--fh);font-size:1.05rem;font-weight:600;color:var(--t1);margin:0}
+.prose-link{
+  display:inline-flex;align-items:center;font-size:.66rem;font-weight:600;
+  color:var(--a1);text-decoration:none;padding:.18rem .65rem;border-radius:100px;
+  border:1px solid var(--a-b);background:var(--a-dim);transition:all .15s;white-space:nowrap;flex-shrink:0;
+}
+.prose-link:hover{background:var(--a1);color:#0a0a0a}
+[data-mode="hs"] .prose-link:hover{color:#fff}
+.prose-card p{margin-bottom:.78rem}
+
+/* College prep tracker */
+.grad-track{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem;margin-bottom:1.25rem;box-shadow:var(--card-shadow)}
+.gt-title{font-family:var(--fh);font-size:.95rem;font-weight:600;color:var(--t1);margin-bottom:.9rem}
+.gt-item{margin-bottom:.72rem}
+.gt-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.26rem}
+.gt-lbl{font-size:.73rem;color:var(--t2)}
+.gt-val{font-size:.74rem;font-weight:600;color:var(--a1)}
+.gt-bg{height:5px;background:var(--bg3);border-radius:100px;overflow:hidden}
+.gt-bar{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--a1),var(--a2));transition:width 1.1s cubic-bezier(.25,.46,.45,.94)}
+
+/* API Key overlay */
+.key-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(4,3,10,.94);backdrop-filter:blur(18px);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+}
+.key-card{
+  background:#111424;border:1px solid rgba(201,168,76,.22);border-radius:20px;
+  padding:2.25rem;max-width:410px;width:100%;text-align:center;
+}
+[data-mode="hs"] .key-card{background:#120028;border-color:rgba(168,85,247,.28)}
+.key-icon{font-size:2.4rem;margin-bottom:1rem}
+.key-title{font-family:var(--fh);font-size:1.45rem;font-weight:700;color:var(--t1);margin-bottom:.45rem}
+.key-desc{font-size:.79rem;color:var(--t2);line-height:1.65;margin-bottom:1.45rem}
+.key-field{
+  width:100%;font-family:var(--fb);font-size:.84rem;color:var(--t1);
+  background:var(--card2);border:1.5px solid var(--border2);
+  border-radius:var(--r);padding:.78rem 1rem;outline:none;margin-bottom:1rem;
+  transition:border-color .2s;
+}
+.key-field:focus{border-color:var(--a1)}
+.key-hint{font-size:.68rem;color:var(--t3);margin-top:.55rem}
+.key-hint a{color:var(--a1);text-decoration:none}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:700px){
+  .mode-cards{grid-template-columns:1fr}
+  .hdr{padding:.78rem 1rem}
+  .home-wrap{padding:2.5rem 1rem 3rem}
+  .dir-wrap,.quiz-wrap,.load-wrap,.dash-wrap{padding-left:1rem;padding-right:1rem}
+  .maj-grid,.int-grid{grid-template-columns:repeat(2,1fr)}
+  .grade-grid{grid-template-columns:repeat(4,1fr)}
+  .school-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .dsc-name{font-size:1.15rem}
+  .dash-top{flex-direction:column}
+  .dash-actions{flex-direction:row;align-items:center;width:100%}
+  .mc-col,.mc-hs{padding:1.75rem 1.4rem}
+  .home-h1{font-size:2rem}
+}
+
+/* ── WEEK/WORKLOAD/PROSE ── */
+.week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:.72rem;margin-bottom:1.65rem}
+.day-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;box-shadow:var(--card-shadow)}
+[data-mode="hs"] .day-card{background:linear-gradient(var(--card),var(--card2));border-color:var(--border2)}
+.day-hd{padding:.62rem 1rem;background:var(--card2);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.day-nm{font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t1)}
+.day-tp{font-size:.6rem;color:var(--t3)}
+.tb{display:flex;align-items:flex-start;gap:.55rem;padding:.48rem 1rem;border-bottom:1px solid var(--border);transition:background .15s}
+.tb:last-child{border-bottom:none}.tb:hover{background:var(--bg2)}
+.tb-t{font-size:.62rem;font-weight:700;color:var(--t3);min-width:46px;padding-top:.03rem}
+.tb-dot{width:6px;height:6px;border-radius:50%;margin-top:.32rem;flex-shrink:0}
+.tb-b{flex:1}.tb-n{font-size:.74rem;font-weight:500;color:var(--t1);line-height:1.3}
+.tb-w{font-size:.64rem;color:var(--t3);margin-top:.04rem}
+.tb-link{font-size:.62rem;color:var(--t3);text-decoration:none;margin-left:.2rem;transition:color .15s}
+.tb-link:hover{color:var(--a1)}
+
+.wl-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem;margin-bottom:1.65rem}
+.wl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.1rem;box-shadow:var(--card-shadow)}
+.wl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.72rem}
+.wl-title{font-family:var(--fh);font-size:.88rem;font-weight:600;color:var(--t1)}
+.wl-score{font-size:1.15rem;font-weight:700}
+.wl-bg{height:5px;background:var(--bg3);border-radius:100px;overflow:hidden;margin-bottom:.3rem}
+.wl-bar{height:100%;border-radius:100px;transition:width 1.2s cubic-bezier(.25,.46,.45,.94)}
+.wl-note{font-size:.66rem;color:var(--t3)}
+
+.prose-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;line-height:1.8;color:var(--t2);font-size:.82rem;margin-bottom:1.35rem;box-shadow:var(--card-shadow)}
+[data-mode="hs"] .prose-card{background:linear-gradient(var(--card),var(--card2));border-color:var(--border2)}
+.prose-card h3{font-family:var(--fh);font-size:1.08rem;font-weight:600;color:var(--t1);margin-bottom:.5rem}
+.prose-card p{margin-bottom:.8rem}
+.prose-sec-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.42rem;margin-top:1.2rem}
+.prose-sec-head:first-child{margin-top:0}
+.prose-sec-head h3{margin:0}
+.sched-intro{margin-bottom:1.2rem}
+.sched-intro h3{font-family:var(--fh);font-size:1.08rem;font-weight:600;color:var(--t1);margin-bottom:.4rem}
+.sched-intro p{font-size:.82rem;color:var(--t2);line-height:1.75}
+
+/* ── COLLEGE PREP TRACKER ── */
+.prep-track{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.35rem;margin-top:1.35rem;box-shadow:var(--card-shadow)}
+[data-mode="hs"] .prep-track{background:linear-gradient(var(--card),var(--card2));border-color:var(--border2)}
+.pt-title{font-family:var(--fh);font-size:.95rem;font-weight:600;color:var(--t1);margin-bottom:.95rem}
+.pt-item{margin-bottom:.72rem}
+.pt-row{display:flex;justify-content:space-between;margin-bottom:.26rem}
+.pt-lbl{font-size:.74rem;color:var(--t2)}.pt-val{font-size:.74rem;font-weight:600;color:var(--a1)}
+.pt-bg{height:5px;background:var(--bg3);border-radius:100px;overflow:hidden}
+.pt-bar{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--a1),var(--a2));transition:width 1.1s cubic-bezier(.25,.46,.45,.94)}
+
+/* ── API KEY OVERLAY ── */
+.key-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.key-card{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r3);padding:2rem 2rem 1.75rem;max-width:420px;width:100%;text-align:center}
+.key-icon{font-size:2rem;margin-bottom:.75rem}
+.key-title{font-family:var(--fh);font-size:1.35rem;font-weight:700;color:var(--t1);margin-bottom:.4rem}
+.key-desc{font-size:.78rem;color:var(--t2);line-height:1.65;margin-bottom:1.25rem}
+.key-field{width:100%;font-family:var(--fb);font-size:.84rem;color:var(--t1);background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--r);padding:.78rem 1rem;outline:none;margin-bottom:1rem;transition:border-color .2s}
+.key-field:focus{border-color:var(--a1)}
+.key-hint{font-size:.72rem;color:var(--t3);margin-top:.85rem}
+.key-hint a{color:var(--a1);text-decoration:none}
+
+/* ── DEADLINE CHIPS ── */
+.chip{font-size:.7rem;font-weight:500;color:var(--t2);background:var(--card2);border:1px solid var(--border2);padding:.24rem .72rem;border-radius:100px;cursor:pointer;transition:all .15s;display:inline-block;margin:.2rem .1rem}
+.chip:hover{color:var(--a1);border-color:var(--a-b);background:var(--a-dim)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:720px){
+  .hdr{padding:.75rem 1rem}
+  .home-wrap{padding:2.5rem 1rem 3rem}
+  .home-h1{font-size:1.9rem}
+  .mode-cards{grid-template-columns:1fr;gap:1rem}
+  .dir-wrap,.quiz-wrap,.load-wrap,.dash-wrap{padding-left:1rem;padding-right:1rem}
+  .q-h{font-size:1.55rem}
+  .maj-grid,.int-grid{grid-template-columns:1fr 1fr}
+  .grade-grid{grid-template-columns:repeat(2,1fr)}
+  .dsc-name{font-size:1.15rem}
+  .week-grid{grid-template-columns:1fr}
+  .opp-grid{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .tab-btn{padding:.6rem .8rem;font-size:.7rem}
+  .mc-col-title,.mc-hs-title{font-size:1.3rem}
+}
+
+</style>
+</head>
+<body data-mode="col">
+
+<div class="stars" id="stars"></div>
+<div class="mesh"></div>
+<div class="col-grid"></div>
+<div class="col-vignette"></div>
+<div class="hs-aurora"></div>
+<div class="hs-dots"></div>
+
+<!-- API Key Overlay -->
+<div class="key-overlay" id="key-overlay" style="display:none">
+  <div class="key-card">
+    <div class="key-icon">🔑</div>
+    <div class="key-title">One quick thing</div>
+    <div class="key-desc">Campus Compass searches real school websites using the Anthropic API. Paste your API key below — stored only in this browser tab.</div>
+    <input class="key-field" id="key-input" type="password" placeholder="sk-or-v1-..." onkeydown="if(event.key==='Enter')saveKey()"/>
+    <button class="btn" onclick="saveKey()" style="width:100%;justify-content:center">Save Key →</button>
+    <div class="key-hint">Get a free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="logo" onclick="goHome()">
+      <div class="logo-icon">🧭</div>
+      <div class="logo-text">Campus Compass</div>
+      <div class="logo-badge" id="mode-badge">College</div>
+    </div>
+    <nav class="hdr-nav" id="hdr-nav">
+      <button class="hdr-btn" onclick="goHome()">🏠 Home</button>
+      <button class="hdr-btn" id="hdr-dir-btn" onclick="goDirFromNav()" style="display:none">📚 Directory</button>
+      <button class="hdr-btn" onclick="showKeyOverlay()">🔑 API Key</button>
+    </nav>
+  </header>
+
+  <!-- ════ HOME ════ -->
+  <div class="page active" id="pg-home">
+    <div class="home-wrap">
+      <div class="home-top">
+        <div class="home-kicker">✦ Student Opportunity Explorer</div>
+        <h1 class="home-h1">Your future starts<br/>with the right school</h1>
+        <p class="home-sub">Pick your mode — we'll pull real data from official school websites and build your personalised opportunity dashboard.</p>
+      </div>
+      <div class="mode-cards">
+        <div class="mc-col" onclick="startMode('col')">
+          <div class="mc-col-glow"></div>
+          <span class="mc-col-icon">🎓</span>
+          <div class="mc-col-title">College Mode</div>
+          <div class="mc-col-desc">Explore universities, research programs, scholarships, and student orgs. Built for applicants and current students.</div>
+          <button class="mc-col-btn">Explore Colleges →</button>
+          <div class="mc-col-tags">
+            <span class="mc-col-tag">Ivy League</span>
+            <span class="mc-col-tag">Public Universities</span>
+            <span class="mc-col-tag">HBCUs</span>
+            <span class="mc-col-tag">STEM Schools</span>
+            <span class="mc-col-tag">Liberal Arts</span>
+          </div>
+        </div>
+        <div class="mc-hs" onclick="startMode('hs')">
+          <div class="mc-hs-glow"></div>
+          <span class="mc-hs-icon">🔥</span>
+          <div class="mc-hs-title">High School Mode</div>
+          <div class="mc-hs-desc">Find clubs, sports, AP courses, scholarships, and college prep resources at your high school. Build your future fr fr.</div>
+          <button class="mc-hs-btn">Explore High Schools 🚀</button>
+          <div class="mc-hs-tags">
+            <span class="mc-hs-tag">AP &amp; IB Courses</span>
+            <span class="mc-hs-tag">Sports &amp; Clubs</span>
+            <span class="mc-hs-tag">College Prep</span>
+            <span class="mc-hs-tag">Scholarships</span>
+            <span class="mc-hs-tag">CTE Programs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ DIRECTORY ════ -->
+  <div class="page" id="pg-dir">
+    <div class="dir-wrap">
+      <div class="dir-head">
+        <div class="pg-title" id="dir-title">Explore Schools</div>
+        <div class="pg-sub" id="dir-sub">Click any school to get started</div>
+        <div class="dir-controls">
+          <input class="dir-search" id="dir-search" type="text" placeholder="Search schools, cities, or vibes..." oninput="dirSearch(this.value)"/>
+          <div class="filter-row" id="filter-row"></div>
+        </div>
+      </div>
+      <div id="dir-body"></div>
+    </div>
+  </div>
+
+  <!-- ════ QUIZ ════ -->
+  <div class="page" id="pg-quiz">
+    <div class="quiz-wrap">
+      <div class="qbanner">
+        <span class="qb-icon" id="qb-icon">🎓</span>
+        <div><div class="qb-name" id="qb-name">School Name</div><div class="qb-meta" id="qb-meta">Location</div></div>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-seg" id="ps1"></div>
+        <div class="prog-seg" id="ps2"></div>
+        <div class="prog-seg" id="ps3"></div>
+      </div>
+      <div class="prog-meta"><span>Tell us about you</span><span class="prog-cur cur">Step 1 of 3</span></div>
+      <div id="q-inner"></div>
+    </div>
+  </div>
+
+  <!-- ════ LOADING ════ -->
+  <div class="page" id="pg-load">
+    <div class="load-wrap">
+      <div class="loader-orb">
+        <div class="lo-core"></div>
+        <div class="lo-ring"></div>
+      </div>
+      <div class="load-title" id="load-title">Loading school data...</div>
+      <div class="load-sub" id="load-sub">Searching official website for real opportunities.</div>
+      <div class="load-url" id="load-url">https://school.edu</div>
+      <div class="load-steps" id="load-steps"></div>
+    </div>
+  </div>
+
+  <!-- ════ COLLEGE DASHBOARD ════ -->
+  <div class="page" id="pg-col-dash">
+    <div class="dash-wrap">
+      <!-- Compare strip -->
+      <div class="compare-strip">
+        <span class="cs-lbl">Comparing:</span>
+        <div id="col-cs-schools" style="display:flex;gap:.4rem;flex-wrap:wrap"></div>
+      </div>
+      <!-- Top bar -->
+      <div class="dash-top">
+        <div class="dash-sch-card">
+          <span class="dsc-icon" id="cd-icon">🎓</span>
+          <div class="dsc-body">
+            <div class="dsc-mode">College Mode</div>
+            <div class="dsc-name" id="cd-name">School Name</div>
+            <div class="dsc-pills" id="cd-pills"></div>
+          </div>
+        </div>
+        <div class="dash-actions">
+          <button class="act-btn" onclick="shareResult('col')">📤 Share</button>
+          <button class="act-btn" onclick="buildDir();nav('pg-dir')">🔄 New Search</button>
+        </div>
+      </div>
+      <!-- Source badge -->
+      <div class="src-badge" id="cd-src"></div>
+      <!-- Match score -->
+      <div id="col-match"></div>
+      <!-- Deadline alert -->
+      <div class="dl-alert" id="col-dl-alert" style="display:none"></div>
+      <!-- Stats -->
+      <div class="stat-row" id="col-stats"></div>
+      <!-- Tab bar -->
+      <div class="tab-bar" id="col-tabs"></div>
+      <!-- Opportunities tab -->
+      <div class="tab-pane on" id="col-t-opp">
+        <div class="sec-lbl">Academic Programs</div>
+        <div class="opp-grid" id="cog-acad"></div>
+        <div class="sec-lbl">Research &amp; Internships</div>
+        <div class="opp-grid" id="cog-res"></div>
+        <div class="sec-lbl">Student Organizations</div>
+        <div class="opp-grid" id="cog-clubs"></div>
+      </div>
+      <!-- Schedule tab -->
+      <div class="tab-pane" id="col-t-sched">
+        <div class="sched-intro prose-card" id="col-sched-intro"></div>
+        <div class="sec-lbl">Weekly Schedule</div>
+        <div class="week-grid" id="col-week"></div>
+        <div class="sec-lbl">Workload Overview</div>
+        <div class="wl-row" id="col-wl"></div>
+      </div>
+      <!-- Campus Life tab -->
+      <div class="tab-pane" id="col-t-life">
+        <div id="col-life"></div>
+      </div>
+      <!-- Scholarships tab -->
+      <div class="tab-pane" id="col-t-schol">
+        <div class="sec-lbl">Scholarships &amp; Aid</div>
+        <div class="opp-grid" id="cog-schol"></div>
+        <div id="col-schol-advice"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ HIGH SCHOOL DASHBOARD ════ -->
+  <div class="page" id="pg-hs-dash">
+    <div class="dash-wrap">
+      <!-- Compare strip -->
+      <div class="compare-strip">
+        <span class="cs-lbl">Comparing:</span>
+        <div id="hs-cs-schools" style="display:flex;gap:.4rem;flex-wrap:wrap"></div>
+      </div>
+      <!-- Top bar -->
+      <div class="dash-top">
+        <div class="dash-sch-card">
+          <span class="dsc-icon" id="hd-icon">📚</span>
+          <div class="dsc-body">
+            <div class="dsc-mode">High School Mode</div>
+            <div class="dsc-name" id="hd-name">School Name</div>
+            <div class="dsc-pills" id="hd-pills"></div>
+          </div>
+        </div>
+        <div class="dash-actions">
+          <button class="act-btn" onclick="shareResult('hs')">📤 Share</button>
+          <button class="act-btn" onclick="buildDir();nav('pg-dir')">🔄 New Search</button>
+        </div>
+      </div>
+      <div class="src-badge" id="hd-src"></div>
+      <div id="hs-match"></div>
+      <div class="stat-row" id="hs-stats"></div>
+      <div class="tab-bar" id="hs-tabs"></div>
+      <!-- Programs tab -->
+      <div class="tab-pane on" id="hs-t-prog">
+        <div class="sec-lbl">AP, IB &amp; Honors Courses</div>
+        <div class="opp-grid" id="hog-acad"></div>
+        <div class="sec-lbl">Career &amp; CTE Programs</div>
+        <div class="opp-grid" id="hog-cte"></div>
+      </div>
+      <!-- Activities tab -->
+      <div class="tab-pane" id="hs-t-act">
+        <div class="sec-lbl">Clubs &amp; Organizations</div>
+        <div class="opp-grid" id="hog-clubs"></div>
+        <div class="sec-lbl">Sports &amp; Athletics</div>
+        <div class="opp-grid" id="hog-sports"></div>
+      </div>
+      <!-- Schedule tab -->
+      <div class="tab-pane" id="hs-t-sched">
+        <div class="sched-intro prose-card" id="hs-sched-intro"></div>
+        <div class="sec-lbl">Daily Schedule</div>
+        <div class="week-grid" id="hs-week"></div>
+        <div class="sec-lbl">Workload Overview</div>
+        <div class="wl-row" id="hs-wl"></div>
+      </div>
+      <!-- Scholarships tab -->
+      <div class="tab-pane" id="hs-t-schol">
+        <div class="sec-lbl">Scholarships &amp; Awards</div>
+        <div class="opp-grid" id="hog-schol"></div>
+        <div id="hs-schol-advice"></div>
+      </div>
+      <!-- College Prep tab -->
+      <div class="tab-pane" id="hs-t-prep">
+        <div id="hs-prep"></div>
+        <div class="sec-lbl" style="margin-top:1.5rem">Daily Life</div>
+        <div id="hs-life"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════
+   Campus Compass — main.js
+   Data + UI helpers + API + App logic
+════════════════════════════════════ */
+
+// ── COLLEGE DIRECTORY ──────────────────────────
+const COL_DIR = [
+  { cat:'Ivy League', schools:[
+    { name:'Harvard University',         city:'Cambridge, MA',    url:'harvard.edu',       tags:['Research','Pre-Law','Pre-Med'],      vibes:['Ultra Competitive','Research-Heavy','Networking Hub'],    em:'🏛️' },
+    { name:'Yale University',            city:'New Haven, CT',    url:'yale.edu',          tags:['Liberal Arts','Law','Theater'],       vibes:['Artsy Intellectual','Debate Culture','Old Money'],        em:'🎭' },
+    { name:'Princeton University',       city:'Princeton, NJ',    url:'princeton.edu',     tags:['STEM','Economics','Research'],        vibes:['Academic Powerhouse','Quaint Campus','Exclusive'],        em:'🔬' },
+    { name:'Columbia University',        city:'New York, NY',     url:'columbia.edu',      tags:['Business','Journalism','NYC'],        vibes:['City Life','Diverse','Go-Getter Energy'],                 em:'🌆' },
+    { name:'University of Pennsylvania', city:'Philadelphia, PA', url:'upenn.edu',         tags:['Wharton','Business','Med'],           vibes:['Pre-Professional','Hustle Culture','Greek Life'],          em:'💼' },
+    { name:'Brown University',           city:'Providence, RI',   url:'brown.edu',         tags:['Open Curriculum','Arts','CS'],        vibes:['Chill Ivy','Creative Freedom','Indie Vibes'],             em:'🎨' },
+    { name:'Dartmouth College',          city:'Hanover, NH',      url:'dartmouth.edu',     tags:['Outdoors','Business','D-Plan'],       vibes:['Outdoorsy','Greek Life','Small Town'],                    em:'🌲' },
+    { name:'Cornell University',         city:'Ithaca, NY',       url:'cornell.edu',       tags:['Engineering','Hotel','Agriculture'],  vibes:['Work Hard Play Hard','Diverse Programs','Big Campus'],    em:'⚙️' },
+  ]},
+  { cat:'Elite Private Universities', schools:[
+    { name:'MIT',                        city:'Cambridge, MA',    url:'mit.edu',           tags:['Engineering','CS','Physics'],         vibes:['Genius Energy','Build Everything','Pressure Cooker'],     em:'🚀' },
+    { name:'Stanford University',        city:'Stanford, CA',     url:'stanford.edu',      tags:['Tech','Entrepreneurship','Research'], vibes:['Silicon Valley Vibes','Startup Culture','Sunny Campus'],  em:'🌅' },
+    { name:'Caltech',                    city:'Pasadena, CA',     url:'caltech.edu',       tags:['Physics','Space','Research'],         vibes:['Small but Mighty','Research Obsessed','Genius Level'],    em:'🌌' },
+    { name:'Duke University',            city:'Durham, NC',       url:'duke.edu',          tags:['Pre-Med','Research','Basketball'],    vibes:['Basketball Crazy','Southern Prestige','Gothic Campus'],   em:'🏀' },
+    { name:'Johns Hopkins University',   city:'Baltimore, MD',    url:'jhu.edu',           tags:['Pre-Med','Public Health','Research'], vibes:['Pre-Med Central','Research Giant','Serious Academics'],   em:'🏥' },
+    { name:'Northwestern University',    city:'Evanston, IL',     url:'northwestern.edu',  tags:['Journalism','Business','Law'],        vibes:['Big Ten Energy','Quarter System','Lake Michigan Views'],  em:'📰' },
+    { name:'Vanderbilt University',      city:'Nashville, TN',    url:'vanderbilt.edu',    tags:['Pre-Med','Business','Music'],         vibes:['Southern Charm','Music City','Well-Rounded'],             em:'🎵' },
+    { name:'Rice University',            city:'Houston, TX',      url:'rice.edu',          tags:['Engineering','Music','Research'],     vibes:['Small Elite','Space City','Residential Colleges'],        em:'🛸' },
+    { name:'Notre Dame',                 city:'Notre Dame, IN',   url:'nd.edu',            tags:['Business','Law','Athletics'],         vibes:['Fighting Irish Spirit','Catholic Values','Football Mad'],  em:'☘️' },
+    { name:'Georgetown University',      city:'Washington, DC',   url:'georgetown.edu',    tags:['International','Pre-Law','Policy'],   vibes:['DC Power Players','Diplomatic Vibes','Jesuit Roots'],     em:'🌍' },
+    { name:'Washington University STL',  city:'St. Louis, MO',    url:'wustl.edu',         tags:['Pre-Med','Engineering','Business'],   vibes:['WashU Culture','Midwest Gem','Research Strong'],          em:'🏥' },
+    { name:'Emory University',           city:'Atlanta, GA',      url:'emory.edu',         tags:['Pre-Med','Business','Public Health'], vibes:['ATL Adjacent','CDC Connections','Pre-Med Hub'],           em:'💊' },
+    { name:'Tufts University',           city:'Medford, MA',      url:'tufts.edu',         tags:['International','Pre-Med','Policy'],   vibes:['Diplomatically Minded','Boston Adjacent','Active Campus'],em:'🌐' },
+    { name:'Carnegie Mellon University', city:'Pittsburgh, PA',   url:'cmu.edu',           tags:['CS','AI','Drama'],                    vibes:['Top CS School','Artsy Nerds','Grind Culture'],            em:'💻' },
+    { name:'Boston University',          city:'Boston, MA',       url:'bu.edu',            tags:['Business','Engineering','Film'],      vibes:['City Campus','Hockey Culture','Diverse Students'],         em:'🎿' },
+    { name:'Tulane University',          city:'New Orleans, LA',  url:'tulane.edu',        tags:['Business','Public Health','Arts'],    vibes:['NOLA Energy','Party Scene','Service Culture'],            em:'🎺' },
+    { name:'Case Western Reserve',       city:'Cleveland, OH',    url:'case.edu',          tags:['Engineering','Pre-Med','Research'],   vibes:['STEM Focused','Underrated Gem','Research Dense'],         em:'⚗️' },
+    { name:'Northeastern University',    city:'Boston, MA',       url:'northeastern.edu',  tags:['Co-op','Business','CS'],              vibes:['Co-op King','Career Ready','City Energy'],                em:'🏙️' },
+  ]},
+  { cat:'Top Public Universities', schools:[
+    { name:'UC Berkeley',                city:'Berkeley, CA',     url:'berkeley.edu',      tags:['Tech','Research','Activism'],         vibes:['Protest Culture','Top-Tier Research','Bay Area Energy'],  em:'🐻' },
+    { name:'UCLA',                       city:'Los Angeles, CA',  url:'ucla.edu',          tags:['Film','Biotech','Sports'],            vibes:['Sunshine Campus','Sports Crazy','Hollywood Adjacent'],     em:'🌴' },
+    { name:'UC San Diego',               city:'La Jolla, CA',     url:'ucsd.edu',          tags:['Marine Bio','CS','Research'],         vibes:['Beach Campus','Research Powerhouse','Laid Back'],         em:'🌊' },
+    { name:'UC Davis',                   city:'Davis, CA',        url:'ucdavis.edu',       tags:['Agriculture','Vet Med','Biology'],    vibes:['Bike Culture','Farm to Fork','Chill Campus'],             em:'🐄' },
+    { name:'UC Santa Barbara',           city:'Santa Barbara, CA',url:'ucsb.edu',          tags:['Marine Science','Physics','Arts'],    vibes:['Beach Life','Party School','Underrated Academics'],       em:'🏄' },
+    { name:'UC Irvine',                  city:'Irvine, CA',       url:'uci.edu',           tags:['Gaming','CS','Biology'],              vibes:['Esports Hub','Suburban Campus','Research Growing'],       em:'🎮' },
+    { name:'UC Santa Cruz',              city:'Santa Cruz, CA',   url:'ucsc.edu',          tags:['Environmental','CS','Arts'],          vibes:['Forest Campus','Hippie Energy','Redwood Trees'],          em:'🌲' },
+    { name:'UC Riverside',               city:'Riverside, CA',    url:'ucr.edu',           tags:['Biology','Agriculture','Diversity'],  vibes:['Diverse & Driven','Inland Empire','Growing Fast'],        em:'🌻' },
+    { name:'University of Michigan',     city:'Ann Arbor, MI',    url:'umich.edu',         tags:['Engineering','Business','Med'],       vibes:['Big Ten Energy','School Spirit','Midwest Chill'],         em:'🏈' },
+    { name:'University of Texas Austin', city:'Austin, TX',       url:'utexas.edu',        tags:['Tech','Business','Music'],            vibes:['Hook Em!','Live Music Scene','Lone Star Pride'],          em:'🤠' },
+    { name:'University of Virginia',     city:'Charlottesville, VA',url:'virginia.edu',    tags:['Business','Law','Pre-Med'],           vibes:['Honor Code Culture','Jefferson Legacy','Greek Life'],     em:'🏛️' },
+    { name:'University of North Carolina',city:'Chapel Hill, NC', url:'unc.edu',           tags:['Journalism','Med','Research'],        vibes:['Southern Charm','Basketball Crazy','Research Triangle'],  em:'🐏' },
+    { name:'Georgia Tech',               city:'Atlanta, GA',      url:'gatech.edu',        tags:['STEM','Engineering','CS'],            vibes:['Grind Culture','Nerdy Cool','ATL Energy'],                em:'🤖' },
+    { name:'University of Florida',      city:'Gainesville, FL',  url:'ufl.edu',           tags:['Engineering','Business','Agriculture'],vibes:['Gator Nation','Greek Life','Sunshine State'],            em:'🐊' },
+    { name:'University of Washington',   city:'Seattle, WA',      url:'uw.edu',            tags:['CS','Medicine','Environment'],        vibes:['Tech Adjacent','Rainy but Cozy','Research Giant'],        em:'🌧️' },
+    { name:'Penn State University',      city:'State College, PA', url:'psu.edu',          tags:['Engineering','Business','Agriculture'],vibes:['Happy Valley Spirit','Football Saturdays','Big Campus'],  em:'🦁' },
+    { name:'Ohio State University',      city:'Columbus, OH',     url:'osu.edu',           tags:['Engineering','Business','Med'],       vibes:['Buckeye Pride','Football Culture','Massive Campus'],      em:'🌰' },
+    { name:'Indiana University',         city:'Bloomington, IN',  url:'iu.edu',            tags:['Business','Music','Law'],             vibes:['Kelley Business','College Town','Big Ten Vibes'],         em:'🎷' },
+    { name:'University of Wisconsin',    city:'Madison, WI',      url:'wisc.edu',          tags:['Research','Engineering','Business'],  vibes:['State Street Energy','Beer Culture','Research Giant'],    em:'🧀' },
+    { name:'University of Minnesota',    city:'Minneapolis, MN',  url:'umn.edu',           tags:['Research','Engineering','Med'],       vibes:['Twin Cities Access','Cold But Cozy','Research Powerhouse'],em:'❄️' },
+    { name:'University of Illinois UC',  city:'Champaign, IL',    url:'illinois.edu',      tags:['Engineering','CS','Business'],        vibes:['Top CS Public','Corn Belt Campus','Big Ten Pride'],       em:'🌽' },
+    { name:'Purdue University',          city:'West Lafayette, IN',url:'purdue.edu',        tags:['Aerospace','Engineering','Agriculture'],vibes:['Space School','Boilermaker Pride','STEM Heavy'],        em:'🛸' },
+    { name:'Michigan State University',  city:'East Lansing, MI', url:'msu.edu',           tags:['Agriculture','Business','Pre-Med'],   vibes:['Spartan Pride','Beautiful Campus','Rival of Michigan'],  em:'💚' },
+    { name:'University of Arizona',      city:'Tucson, AZ',       url:'arizona.edu',       tags:['Astronomy','Business','Nursing'],     vibes:['Desert Campus','Wildcat Nation','Research Growing'],      em:'🌵' },
+    { name:'Arizona State University',   city:'Tempe, AZ',        url:'asu.edu',           tags:['Innovation','Business','Engineering'],vibes:['Sun Devil Energy','Massive & Innovative','Online Giant'], em:'😈' },
+    { name:'University of Colorado',     city:'Boulder, CO',      url:'colorado.edu',      tags:['Environmental','Aerospace','Business'],vibes:['Outdoor Lifestyle','Boulder Vibes','Ski Weekends'],      em:'⛷️' },
+    { name:'University of Utah',         city:'Salt Lake City, UT',url:'utah.edu',         tags:['Gaming','Pre-Med','Engineering'],     vibes:['Gaming Hub','Ski Adjacent','Utes Pride'],                 em:'🏔️' },
+    { name:'Rutgers University',         city:'New Brunswick, NJ',url:'rutgers.edu',       tags:['Pharmacy','Business','Engineering'],  vibes:['NJ Pride','Diverse Campus','Scarlet Knights'],            em:'⚡' },
+    { name:'University of Maryland',     city:'College Park, MD', url:'umd.edu',           tags:['CS','Business','Engineering'],        vibes:['DC Adjacent','Terp Pride','Research Park'],               em:'🐢' },
+    { name:'University of Pittsburgh',   city:'Pittsburgh, PA',   url:'pitt.edu',          tags:['Pre-Med','Business','Engineering'],   vibes:['Cathedral of Learning','Steel City','Pre-Med Strong'],    em:'🏙️' },
+    { name:'University of Georgia',      city:'Athens, GA',       url:'uga.edu',           tags:['Business','Agriculture','Journalism'],vibes:['UGA Game Days','Southern School','Athens Music Scene'],   em:'🐶' },
+    { name:'Clemson University',         city:'Clemson, SC',       url:'clemson.edu',       tags:['Engineering','Business','Agriculture'],vibes:['Tiger Nation','ACC Athletics','Southern Pride'],          em:'🐅' },
+    { name:'University of Tennessee',    city:'Knoxville, TN',    url:'utk.edu',           tags:['Engineering','Business','Agriculture'],vibes:['Rocky Top Energy','SEC Football','Knoxville Pride'],     em:'🟠' },
+    { name:'University of Alabama',      city:'Tuscaloosa, AL',   url:'ua.edu',            tags:['Business','Engineering','Pre-Law'],   vibes:['Roll Tide!','Greek Life Heavy','SEC Powerhouse'],         em:'🐘' },
+    { name:'LSU',                        city:'Baton Rouge, LA',  url:'lsu.edu',           tags:['Agriculture','Business','Pre-Med'],   vibes:['Tiger Stadium Energy','NOLA Adjacent','Cajun Culture'],   em:'🐯' },
+    { name:'University of South Carolina',city:'Columbia, SC',    url:'sc.edu',            tags:['Business','Hospitality','Pre-Med'],   vibes:['Gamecock Pride','SEC Culture','Vibrant Campus Life'],     em:'🐓' },
+    { name:'University of Kansas',       city:'Lawrence, KS',     url:'ku.edu',            tags:['Business','Pharmacy','Med'],          vibes:['Basketball Crazy','Jayhawk Nation','College Town'],       em:'🏀' },
+    { name:'University of Iowa',         city:'Iowa City, IA',    url:'uiowa.edu',         tags:['Creative Writing','Medicine','Law'],  vibes:['Writers Workshop Fame','Hawkeye Pride','River Town'],     em:'✍️' },
+    { name:'Virginia Tech',              city:'Blacksburg, VA',   url:'vt.edu',            tags:['Engineering','CS','Architecture'],    vibes:['Hokie Nation','Mountain Campus','STEM Strong'],           em:'🦃' },
+    { name:'NC State University',        city:'Raleigh, NC',      url:'ncsu.edu',          tags:['Engineering','Agriculture','Design'], vibes:['Research Triangle','Red & White Pride','Tech Forward'],   em:'🐺' },
+    { name:'University of Oregon',       city:'Eugene, OR',       url:'uoregon.edu',       tags:['Journalism','Business','Arts'],       vibes:['Nike Hometown','Eco-Friendly','Pacific NW Vibes'],        em:'🦆' },
+    { name:'Oregon State University',    city:'Corvallis, OR',    url:'oregonstate.edu',   tags:['Engineering','Agriculture','Forestry'],vibes:['Beaver Nation','STEM Strong','Pacific NW'],              em:'🌲' },
+    { name:'University of Kentucky',     city:'Lexington, KY',    url:'uky.edu',           tags:['Pre-Med','Agriculture','Business'],   vibes:['Basketball Obsessed','Bluegrass State','Wildcat Nation'], em:'🏀' },
+    { name:'West Virginia University',   city:'Morgantown, WV',   url:'wvu.edu',           tags:['Engineering','Business','Nursing'],   vibes:['Mountaineer Pride','Couch Burning Culture','Outdoorsy'],  em:'⛰️' },
+    { name:'University of New Mexico',   city:'Albuquerque, NM',  url:'unm.edu',           tags:['Pre-Med','Native Studies','Engineering'],vibes:['Southwest Culture','Research Medical','Lobo Nation'],  em:'🌵' },
+    { name:'University of Hawaii',       city:'Honolulu, HI',     url:'hawaii.edu',        tags:['Marine Biology','Business','Tourism'],vibes:['Paradise Campus','Pacific Studies','Aloha Energy'],       em:'🌺' },
+  ]},
+  { cat:'Top STEM & Engineering', schools:[
+    { name:'Harvey Mudd College',        city:'Claremont, CA',    url:'hmc.edu',           tags:['STEM','Small Class','Research'],      vibes:['Tiny but Elite','Collaborative','Balance Focus'],          em:'🔭' },
+    { name:'Worcester Polytechnic',      city:'Worcester, MA',    url:'wpi.edu',           tags:['Engineering','CS','Project-Based'],   vibes:['Project Based','STEM Pure','Collaborative'],              em:'🔧' },
+    { name:'Rensselaer Polytechnic',     city:'Troy, NY',         url:'rpi.edu',           tags:['Engineering','CS','Management'],      vibes:['Northeast STEM','Architecture','Intense Curriculum'],     em:'⚙️' },
+    { name:'Illinois Tech',              city:'Chicago, IL',      url:'iit.edu',           tags:['Engineering','CS','Architecture'],    vibes:['Chicago Access','Design + STEM','Affordable Elite'],      em:'🏙️' },
+    { name:'Stevens Institute of Tech',  city:'Hoboken, NJ',      url:'stevens.edu',       tags:['Engineering','CS','Finance'],         vibes:['NYC Views','STEM + Finance','Hudson River Campus'],       em:'🗽' },
+    { name:'Colorado School of Mines',   city:'Golden, CO',       tags:['Engineering','Mining','Energy'],      url:'mines.edu', vibes:['Energy Sector Pipeline','Mountain Campus','Hardcore STEM'],  em:'⛏️' },
+    { name:'Rose-Hulman Institute',      city:'Terre Haute, IN',  url:'rose-hulman.edu',   tags:['Engineering','Math','CS'],            vibes:['Top Undergrad Engineering','Small Class','Supportive'],   em:'🌹' },
+    { name:'Lehigh University',          city:'Bethlehem, PA',    url:'lehigh.edu',        tags:['Engineering','Business','Finance'],   vibes:['STEM + Business Mix','Mountain Campus','Finance Feed'],   em:'🦅' },
+    { name:'Drexel University',          city:'Philadelphia, PA', url:'drexel.edu',        tags:['Co-op','Engineering','Design'],       vibes:['Philly Energy','Co-op Culture','Career Ready'],           em:'🐉' },
+    { name:'Kettering University',       city:'Flint, MI',        url:'kettering.edu',     tags:['Engineering','Co-op','Automotive'],   vibes:['GM Pipeline','Co-op Every Term','Auto Industry'],         em:'🚗' },
+  ]},
+  { cat:'HBCUs', schools:[
+    { name:'Howard University',          city:'Washington, DC',   url:'howard.edu',        tags:['Law','Medicine','Arts'],              vibes:['Excellence & Legacy','Political Energy','The Mecca'],     em:'👑' },
+    { name:'Morehouse College',          city:'Atlanta, GA',      url:'morehouse.edu',     tags:['Leadership','Business','Pre-Med'],    vibes:['Kings Energy','Brotherhood','Legacy School'],             em:'🏆' },
+    { name:'Spelman College',            city:'Atlanta, GA',      url:'spelman.edu',       tags:['STEM','Social Justice','Arts'],       vibes:['Sisterhood','Excellence','Historically Rich'],            em:'✨' },
+    { name:'Hampton University',         city:'Hampton, VA',      url:'hamptonu.edu',      tags:['Business','Nursing','Marine Sci'],    vibes:['Waterfront Campus','Pride & Class','Legacy'],             em:'⚓' },
+    { name:'Florida A&M University',     city:'Tallahassee, FL',  url:'famu.edu',          tags:['Pharmacy','Engineering','Business'],  vibes:['Rattler Pride','Marching Band Famous','STEM Growing'],    em:'🐍' },
+    { name:'Tuskegee University',        city:'Tuskegee, AL',     url:'tuskegee.edu',      tags:['Engineering','Vet Med','Aerospace'],  vibes:['Tuskegee Airmen Legacy','Historic Campus','STEM Strong'], em:'✈️' },
+    { name:'Howard Community College',   city:'Columbia, MD',     url:'howardcc.edu',      tags:['Transfer','Nursing','Business'],      vibes:['Affordable Gateway','Community Focused','Transfer Path'], em:'🌟' },
+    { name:'Xavier University of LA',    city:'New Orleans, LA',  url:'xula.edu',          tags:['Pre-Med','Pharmacy','Biology'],       vibes:['#1 Pre-Med HBCU','Catholic HBCU','NOLA Culture'],        em:'⚕️' },
+    { name:'Clark Atlanta University',   city:'Atlanta, GA',      url:'cau.edu',           tags:['Business','Communications','Social Work'],vibes:['ATL Energy','AUC Community','Networking Hub'],         em:'🌆' },
+    { name:'North Carolina A&T',         city:'Greensboro, NC',   url:'ncat.edu',          tags:['Engineering','Agriculture','Business'],vibes:['Top HBCU STEM','Aggie Pride','Research Growing'],        em:'🐾' },
+    { name:'Delaware State University',  city:'Dover, DE',        url:'desu.edu',          tags:['STEM','Business','Nursing'],          vibes:['Underrated Gem','HBCU Strong','East Coast Location'],     em:'💙' },
+    { name:'Tennessee State University', city:'Nashville, TN',    url:'tnstate.edu',       tags:['Engineering','Business','Nursing'],   vibes:['Music City Adjacent','Growing Fast','Tigerbelle Legacy'],  em:'🎵' },
+    { name:'Prairie View A&M',           city:'Prairie View, TX', url:'pvamu.edu',         tags:['Engineering','Nursing','Business'],   vibes:['Texas HBCU','NASA Partnership','Panther Pride'],          em:'🐾' },
+    { name:'Morgan State University',    city:'Baltimore, MD',    url:'morgan.edu',        tags:['Engineering','Architecture','Business'],vibes:['Baltimore Strong','Research Growing','Bear Nation'],     em:'🐻' },
+    { name:'Grambling State University', city:'Grambling, LA',    url:'gram.edu',          tags:['Business','Communications','Education'],vibes:['GSU Pride','Football Legacy','HBCU Family'],            em:'🏈' },
+  ]},
+  { cat:'Liberal Arts Colleges', schools:[
+    { name:'Williams College',           city:'Williamstown, MA', url:'williams.edu',      tags:['Humanities','Economics','Art'],       vibes:['Elite Small School','Mountains & Books','Intimate'],      em:'📚' },
+    { name:'Amherst College',            city:'Amherst, MA',      url:'amherst.edu',       tags:['Open Curriculum','Research','5-College'],vibes:['Open Minded','Collaborative','New England Chill'],    em:'🍂' },
+    { name:'Middlebury College',         city:'Middlebury, VT',   url:'middlebury.edu',    tags:['Languages','Environment','Skiing'],   vibes:['Outdoorsy Intellectuals','Language Focus','Ski Breaks'],  em:'⛷️' },
+    { name:'Swarthmore College',         city:'Swarthmore, PA',   url:'swarthmore.edu',    tags:['Engineering','Social Justice','Research'],vibes:['Activist Campus','Quaker Roots','High GPAs'],         em:'🌿' },
+    { name:'Wellesley College',          city:'Wellesley, MA',    url:'wellesley.edu',     tags:['Women\'s College','Leadership','STEM'],vibes:['Hillary & Hillary Energy','Prestige','Lake Campus'],      em:'💜' },
+    { name:'Bowdoin College',            city:'Brunswick, ME',    url:'bowdoin.edu',       tags:['Marine Studies','Arctic Research','Arts'],vibes:['Maine Charm','Outdoorsy Intellectual','Close-Knit'],  em:'🦞' },
+    { name:'Colby College',              city:'Waterville, ME',   url:'colby.edu',         tags:['Environmental','Global Studies','Arts'],vibes:['Maine Vibes','Active Outdoor Life','Small Community'],  em:'🌊' },
+    { name:'Colgate University',         city:'Hamilton, NY',     url:'colgate.edu',       tags:['Economics','Political Science','Arts'],vibes:['Upstate NY','Greek Life','Pre-Professional'],            em:'🦁' },
+    { name:'Bates College',              city:'Lewiston, ME',     url:'bates.edu',         tags:['Rhetoric','Environment','Pre-Med'],   vibes:['New England Charm','No Greek Life','Community Strong'],   em:'🌲' },
+    { name:'Hamilton College',           city:'Clinton, NY',      url:'hamilton.edu',      tags:['Writing','Communications','Pre-Law'],  vibes:['Best Writing Program','Rolling Hills','Discussion-Based'],em:'✍️' },
+    { name:'Vassar College',             city:'Poughkeepsie, NY', url:'vassar.edu',        tags:['Arts','Humanities','STEM'],           vibes:['Progressive Campus','Hudson Valley','Gender Studies Hub'], em:'🎨' },
+    { name:'Trinity College',            city:'Hartford, CT',     url:'trincoll.edu',      tags:['Urban Studies','Pre-Law','Neuroscience'],vibes:['Hartford Access','Preppy-Urban Mix','Small Clas Sizes'],em:'🏛️' },
+    { name:'Connecticut College',        city:'New London, CT',   url:'conncoll.edu',      tags:['Environmental','International','Arts'],vibes:['No Greek Life','Community Feel','Sustainability Focus'],  em:'🌎' },
+    { name:'Skidmore College',           city:'Saratoga Springs, NY',url:'skidmore.edu',   tags:['Arts','Business','STEM'],             vibes:['Creative Thought Matters','Arts Focus','Artsy Campus'],   em:'🎭' },
+    { name:'Union College',              city:'Schenectady, NY',  url:'union.edu',         tags:['Engineering','Political Science','Pre-Med'],vibes:['Oldest Non-Sectarian','Trimester System','Greek Strong'],em:'⚙️' },
+    { name:'Oberlin College',            city:'Oberlin, OH',      url:'oberlin.edu',       tags:['Music Conservatory','Activism','Arts'],vibes:['Most Progressive Campus','Music Fame','Radical Tradition'],em:'🎼' },
+    { name:'Macalester College',         city:'St. Paul, MN',     url:'macalester.edu',    tags:['International','Political Science','Social Justice'],vibes:['Model UN Capital','Global Students','City Campus'],em:'🌍' },
+    { name:'Kenyon College',             city:'Gambier, OH',      url:'kenyon.edu',        tags:['Creative Writing','English','Theater'],vibes:['Best Writing Program','Rural Intellectual','Small & Intense'],em:'📖' },
+    { name:'Grinnell College',           city:'Grinnell, IA',     url:'grinnell.edu',      tags:['Social Justice','Research','Sciences'],vibes:['Self-Governance','Generous FA','Quirky Intellectual'],   em:'🌾' },
+    { name:'Carleton College',           city:'Northfield, MN',   url:'carleton.edu',      tags:['Sciences','Math','Humanities'],       vibes:['Minnesota Chill','Top Science Liberal Arts','Quirky Fun'], em:'❄️' },
+    { name:'Reed College',               city:'Portland, OR',     url:'reed.edu',          tags:['Humanities','Sciences','Thesis'],     vibes:['Intellectual Intensity','PDX Culture','No Greek Life'],   em:'🌲' },
+    { name:'Occidental College',         city:'Los Angeles, CA',  url:'oxy.edu',           tags:['Diplomacy','Urban Studies','Arts'],   vibes:['LA Adjacent','Obama\'s Alma Mater','Diverse & Engaged'],  em:'🌆' },
+    { name:'Claremont McKenna College',  city:'Claremont, CA',    url:'cmc.edu',           tags:['Government','Economics','Law'],       vibes:['Pre-Professional Liberal Arts','5C Consortium','DC Feed'],  em:'📊' },
+    { name:'Scripps College',            city:'Claremont, CA',    url:'scrippscollege.edu',tags:['Women\'s College','Humanities','Arts'],vibes:['Garden Campus','Feminist Tradition','Consortium Access'],  em:'🌸' },
+    { name:'Pitzer College',             city:'Claremont, CA',    url:'pitzer.edu',        tags:['Social Justice','Environment','Creativity'],vibes:['Most Progressive 5C','No Core Req','Activist Energy'],em:'✊' },
+  ]},
+  { cat:'Art, Design & Music Schools', schools:[
+    { name:'Rhode Island School of Design',city:'Providence, RI', url:'risd.edu',          tags:['Fine Arts','Design','Architecture'], vibes:['Elite Art School','Design World Pipeline','Collaborative w/Brown'],em:'🖌️' },
+    { name:'Parsons School of Design',   city:'New York, NY',     url:'newschool.edu',     tags:['Fashion','Graphic Design','Interior'],vibes:['NYC Fashion World','Parsons Project','Global Students'],  em:'👗' },
+    { name:'Pratt Institute',            city:'Brooklyn, NY',     url:'pratt.edu',         tags:['Architecture','Design','Fine Arts'],  vibes:['Brooklyn Creative','Architecture Famous','Studio Culture'],em:'🏗️' },
+    { name:'School of the Art Institute',city:'Chicago, IL',      url:'saic.edu',          tags:['Fine Arts','Writing','Design'],       vibes:['Chicago Art Scene','Experimental','No Grades Culture'],   em:'🎭' },
+    { name:'Savannah College of Art',    city:'Savannah, GA',     url:'scad.edu',          tags:['Animation','Fashion','Film'],         vibes:['Largest Art School','Historic Savannah','Industry Focused'],em:'🎨' },
+    { name:'Berklee College of Music',   city:'Boston, MA',       url:'berklee.edu',       tags:['Music Production','Jazz','Film Scoring'],vibes:['Music Industry Pipeline','Contemporary Music','Global Artists'],em:'🎸' },
+    { name:'Juilliard School',           city:'New York, NY',     url:'juilliard.edu',     tags:['Performing Arts','Dance','Drama'],    vibes:['Elite Performing Arts','NYC Culture','Intense Training'],  em:'🎻' },
+    { name:'CalArts',                    city:'Valencia, CA',     url:'calarts.edu',       tags:['Animation','Film','Fine Arts'],       vibes:['Disney Pipeline','Avant-Garde','Creative Freedom'],        em:'🎬' },
+    { name:'NYU Tisch School of Arts',   city:'New York, NY',     url:'tisch.nyu.edu',     tags:['Film','Acting','Game Design'],        vibes:['Hollywood + NYC','Film Industry Feed','Urban Campus'],     em:'🎥' },
+    { name:'Full Sail University',       city:'Winter Park, FL',  url:'fullsail.edu',      tags:['Game Design','Music Production','Film'],vibes:['Industry Ready','Accelerated','Entertainment Focus'],   em:'🎮' },
+  ]},
+  { cat:'Business & Finance Focused', schools:[
+    { name:'Babson College',             city:'Wellesley, MA',    url:'babson.edu',        tags:['Entrepreneurship','Business','MBA'],  vibes:['#1 Entrepreneurship','Startup Culture','Career Ready'],   em:'💡' },
+    { name:'Bentley University',         city:'Waltham, MA',      url:'bentley.edu',       tags:['Business','Finance','Analytics'],     vibes:['Business Pure Play','Boston Adjacent','Accounting Strong'],em:'📈' },
+    { name:'Bryant University',          city:'Smithfield, RI',   url:'bryant.edu',        tags:['Business','Finance','International'],  vibes:['Business Focused','Small Campus','New England'],          em:'💼' },
+    { name:'Elon University',            city:'Elon, NC',         url:'elon.edu',          tags:['Business','Communications','Pre-Law'], vibes:['High Placement Rate','Beautiful Campus','Engaged Learning'],em:'☀️' },
+    { name:'Wake Forest University',     city:'Winston-Salem, NC',url:'wfu.edu',           tags:['Business','Pre-Med','Law'],           vibes:['Top Business School','Pro Humanitate','Southern Prestige'],em:'🏈' },
+    { name:'Villanova University',       city:'Villanova, PA',    url:'villanova.edu',     tags:['Business','Engineering','Nursing'],   vibes:['Catholic Values','Philly Suburbs','Basketball Proud'],    em:'🏀' },
+    { name:'Fordham University',         city:'New York, NY',     url:'fordham.edu',       tags:['Business','Law','Pre-Med'],           vibes:['Jesuit NYC','Two Campuses','Wall Street Access'],         em:'🗽' },
+    { name:'Santa Clara University',     city:'Santa Clara, CA',  url:'scu.edu',           tags:['Business','Engineering','Law'],       vibes:['Silicon Valley Access','Jesuit Values','Tech Networking'], em:'💻' },
+  ]},
+  { cat:'Large State Universities', schools:[
+    { name:'Florida State University',   city:'Tallahassee, FL',  url:'fsu.edu',           tags:['Business','Film','Pre-Med'],          vibes:['Seminole Pride','Party Reputation','Research Growing'],    em:'🍢' },
+    { name:'University of South Florida',city:'Tampa, FL',        url:'usf.edu',           tags:['Research','Business','Engineering'],  vibes:['Tampa Bay Location','Research Rising','Sun Belt'],        em:'☀️' },
+    { name:'Florida International Univ.',city:'Miami, FL',        url:'fiu.edu',           tags:['Business','Hospitality','International'],vibes:['Miami Energy','Diverse Students','Commuter School'],   em:'🌴' },
+    { name:'Texas A&M University',       city:'College Station, TX',url:'tamu.edu',        tags:['Engineering','Agriculture','Business'],vibes:['Aggie Spirit','Corps of Cadets','Massive School'],       em:'🤠' },
+    { name:'University of Houston',      city:'Houston, TX',      url:'uh.edu',            tags:['Engineering','Business','Law'],       vibes:['Space City Access','Diverse & Urban','Energy Sector'],     em:'🚀' },
+    { name:'Texas Tech University',      city:'Lubbock, TX',      url:'ttu.edu',           tags:['Engineering','Business','Agriculture'],vibes:['Guns Up!','West Texas Spirit','Growing Research'],       em:'🔫' },
+    { name:'Baylor University',          city:'Waco, TX',         url:'baylor.edu',        tags:['Pre-Med','Business','Law'],           vibes:['Christian Values','Bears Pride','Academic Rising'],        em:'🐻' },
+    { name:'TCU',                        city:'Fort Worth, TX',   url:'tcu.edu',           tags:['Business','Pre-Med','Journalism'],    vibes:['Preppy Energy','Fort Worth Charm','Greek Life Strong'],    em:'🐸' },
+    { name:'Oklahoma State University',  city:'Stillwater, OK',   url:'okstate.edu',       tags:['Agriculture','Engineering','Business'],vibes:['Cowboy Culture','Orange Pride','Midwest Friendly'],      em:'🤠' },
+    { name:'University of Oklahoma',     city:'Norman, OK',       url:'ou.edu',            tags:['Business','Pre-Med','Architecture'], vibes:['Boomer Sooner!','College Town','Greek Life'],              em:'🌪️' },
+    { name:'Iowa State University',      city:'Ames, IA',         url:'iastate.edu',       tags:['Engineering','Agriculture','Business'],vibes:['Cyclone Pride','STEM Strong','Midwest Charm'],           em:'🌾' },
+    { name:'Kansas State University',    city:'Manhattan, KS',    url:'k-state.edu',       tags:['Agriculture','Engineering','Vet Med'], vibes:['Little Apple','Wildcat Spirit','Ag School'],             em:'🌻' },
+    { name:'Colorado State University',  city:'Fort Collins, CO', url:'colostate.edu',     tags:['Agriculture','Engineering','Business'],vibes:['Mountain Access','Ram Pride','Eco-Conscious'],           em:'🏔️' },
+    { name:'University of Nebraska',     city:'Lincoln, NE',      url:'unl.edu',           tags:['Engineering','Agriculture','Business'],vibes:['Husker Nation','Big Red Pride','Midwest Values'],        em:'🌽' },
+    { name:'University of Missouri',     city:'Columbia, MO',     url:'missouri.edu',      tags:['Journalism','Business','Pre-Med'],    vibes:['J-School Famous','Mizzou Pride','College Town'],          em:'🐯' },
+    { name:'University of Arkansas',     city:'Fayetteville, AR', url:'uark.edu',          tags:['Business','Engineering','Agriculture'],vibes:['Razorback Nation','Walmart HQ Adjacent','SEC Energy'],  em:'🐗' },
+    { name:'Mississippi State University',city:'Starkville, MS',  url:'msstate.edu',       tags:['Agriculture','Engineering','Business'],vibes:['Bulldog Pride','Cowbell Culture','SEC Spirit'],          em:'🐶' },
+    { name:'Auburn University',          city:'Auburn, AL',       url:'auburn.edu',        tags:['Engineering','Business','Agriculture'],vibes:['War Eagle!','SEC Rival of Alabama','College Town'],      em:'🦅' },
+    { name:'University of Mississippi',  city:'Oxford, MS',       url:'olemiss.edu',       tags:['Business','Pre-Law','Journalism'],    vibes:['Ole Miss Spirit','Southern Culture','The Grove'],         em:'🌳' },
+    { name:'Georgia State University',   city:'Atlanta, GA',      url:'gsu.edu',           tags:['Business','Law','Film'],              vibes:['Atlanta Access','Diverse Student Body','Growing Fast'],   em:'🏙️' },
+    { name:'George Mason University',    city:'Fairfax, VA',      url:'gmu.edu',           tags:['CS','Business','Policy'],             vibes:['DC Adjacent','Diverse Campus','Commuter Culture'],         em:'🦅' },
+    { name:'Temple University',          city:'Philadelphia, PA', url:'temple.edu',        tags:['Business','Media','Law'],             vibes:['Philly Energy','Owl Nation','Urban Campus'],               em:'🦉' },
+    { name:'University of Cincinnati',   city:'Cincinnati, OH',   url:'uc.edu',            tags:['Engineering','Design','Co-op'],       vibes:['Co-op Pioneer','Cincinnati Culture','DAAP Design School'],em:'🎨' },
+    { name:'University of Louisville',   city:'Louisville, KY',   url:'louisville.edu',    tags:['Business','Engineering','Med'],       vibes:['Louisville Slugger City','Cards Pride','Research Medical'],em:'🏀' },
+    { name:'University of Memphis',      city:'Memphis, TN',      url:'memphis.edu',       tags:['Business','Law','Music'],             vibes:['Memphis Music Scene','Affordable Urban','Growing Research'],em:'🎵' },
+    { name:'University of Nevada LV',    city:'Las Vegas, NV',    url:'unlv.edu',          tags:['Hospitality','Business','Engineering'],vibes:['Vegas Adjacent','Hospitality #1','Desert Campus'],       em:'🎰' },
+    { name:'New Mexico State Univ.',     city:'Las Cruces, NM',   url:'nmsu.edu',          tags:['Agriculture','Engineering','Business'],vibes:['Southwest Culture','Aggie Pride','Border Region'],        em:'🌵' },
+    { name:'University of Alaska',       city:'Fairbanks, AK',    url:'uaf.edu',           tags:['Arctic Research','Engineering','Natural Resources'],vibes:['Last Frontier','Aurora Research','Wild Campus'],em:'🦅' },
+  ]},
+  { cat:'Community & Transfer Colleges', schools:[
+    { name:'Santa Monica College',       city:'Santa Monica, CA', url:'smc.edu',           tags:['Transfer','Film','Business'],         vibes:['UC Transfer Pipeline','Beach Adjacent','Affordable'],     em:'🏄' },
+    { name:'De Anza College',            city:'Cupertino, CA',    url:'deanza.edu',        tags:['CS','Transfer','Business'],           vibes:['Silicon Valley','Tech Transfer Path','Affordable Elite'], em:'💻' },
+    { name:'Pasadena City College',      city:'Pasadena, CA',     url:'pasadena.edu',      tags:['Transfer','Arts','Business'],         vibes:['LA Area','Diverse Students','Transfer Prep'],             em:'🌴' },
+    { name:'Miami Dade College',         city:'Miami, FL',        url:'mdc.edu',           tags:['Business','Healthcare','Arts'],       vibes:['Diverse City','Affordable','Night Classes'],              em:'🌊' },
+    { name:'Austin Community College',   city:'Austin, TX',       url:'austincc.edu',      tags:['Tech','Workforce','Transfer'],        vibes:['Austin Energy','Flexible','Career Ready'],                em:'🎸' },
+    { name:'Lone Star College',          city:'Houston, TX',      url:'lonestar.edu',      tags:['Workforce','Transfer','Healthcare'],  vibes:['Huge System','Houston Access','Affordable'],              em:'⭐' },
+    { name:'Dallas College',             city:'Dallas, TX',       url:'dallascollege.edu', tags:['Business','Healthcare','Technology'], vibes:['DFW Access','Diverse','Transfer Ready'],                  em:'🏙️' },
+    { name:'Northern Virginia CC',       city:'Annandale, VA',    url:'nvcc.edu',          tags:['Transfer','CS','Business'],           vibes:['DC Adjacent','NVCC to GMU Pipeline','Affordable'],        em:'🦅' },
+    { name:'Foothill College',           city:'Los Altos Hills, CA',url:'foothill.edu',    tags:['STEM','Transfer','Healthcare'],       vibes:['Silicon Valley','UC Transfer','Career Programs'],          em:'🌄' },
+    { name:'Broward College',            city:'Fort Lauderdale, FL',url:'broward.edu',     tags:['Healthcare','Business','Transfer'],   vibes:['South Florida','Affordable Path','Diverse Campus'],       em:'☀️' },
+    { name:'Houston Community College',  city:'Houston, TX',      url:'hccs.edu',          tags:['Workforce','Healthcare','Transfer'],   vibes:['Huge System','Houston Area','Open Admission'],            em:'🌆' },
+    { name:'Valencia College',           city:'Orlando, FL',      url:'valenciacollege.edu',tags:['Business','Healthcare','Arts'],      vibes:['UCF Partnership','Orlando Access','Award-Winning CC'],     em:'🎠' },
+    { name:'Pellissippi State CC',       city:'Knoxville, TN',    url:'pstcc.edu',         tags:['Engineering Tech','Business','Transfer'],vibes:['UT Knoxville Feeder','Affordable','Tennessee Focus'],  em:'🏔️' },
+    { name:'Cuyahoga Community College', city:'Cleveland, OH',    url:'tri-c.edu',         tags:['Healthcare','Business','Transfer'],   vibes:['Northeast Ohio','Affordable','Community Focus'],           em:'🌊' },
+  ]},
+  { cat:'Historically Significant & Unique', schools:[
+    { name:'United States Military Academy',city:'West Point, NY',url:'westpoint.edu',    tags:['Military','Engineering','Leadership'],vibes:['Full Scholarship','Serve Your Country','Elite Training'],  em:'🎖️' },
+    { name:'United States Naval Academy', city:'Annapolis, MD',   url:'usna.edu',          tags:['Military','Engineering','Leadership'],vibes:['Full Scholarship','Naval Career','Historic Campus'],       em:'⚓' },
+    { name:'US Air Force Academy',        city:'Colorado Springs, CO',url:'usafa.edu',     tags:['Military','Aerospace','Engineering'],vibes:['Full Scholarship','Fly Jets','Mountain Campus'],            em:'✈️' },
+    { name:'Cooper Union',               city:'New York, NY',     url:'cooper.edu',        tags:['Architecture','Engineering','Fine Arts'],vibes:['Free Tuition','NYC Creative','Ultra Selective'],        em:'🏙️' },
+    { name:'Minerva University',          city:'San Francisco, CA',url:'minerva.edu',      tags:['Global','No Campus','Interdisciplinary'],vibes:['Study in 7 Cities','No Traditional Campus','Future Model'],em:'🌍' },
+    { name:'Berea College',              city:'Berea, KY',        url:'berea.edu',         tags:['Work Study','No Tuition','Service'],  vibes:['Free for Low-Income','Work to Learn','Appalachian Focus'], em:'🤝' },
+    { name:'Deep Springs College',       city:'Deep Springs, CA', url:'deepsprings.edu',   tags:['Ranch','Humanities','Labor Program'], vibes:['2-Year Tiny College','Free + Ranch Life','Transfers to Ivies'],em:'🐄' },
+    { name:'Hampshire College',          city:'Amherst, MA',      url:'hampshire.edu',     tags:['No Grades','DIY Education','Arts'],   vibes:['Make Your Own Major','No Traditional Grades','Super Creative'],em:'🎨' },
+  ]},
+];
+
+// ── HIGH SCHOOL DIRECTORY ──────────────────────
+const HS_DIR = [
+  { cat:'Texas', schools:[
+    { name:'Westlake High School',     city:'Austin, TX',    url:'austinisd.org',   tags:['AP Courses','Athletics','Music'],vibes:['State Champs Energy','College Prep Heavy','Suburb Pride'],em:'🏆'},
+    { name:'Allen High School',        city:'Allen, TX',     url:'allenisd.org',    tags:['Football','Band','STEM'],        vibes:['Stadium School','Band Famous','Big D Adjacent'],         em:'🏟️'},
+    { name:'Plano Senior High',        city:'Plano, TX',     url:'pisd.edu',        tags:['IB Programme','STEM','Arts'],    vibes:['Diverse & Driven','IB Grind','DFW Suburbs'],             em:'🌟'},
+    { name:'Katy High School',         city:'Katy, TX',      url:'katyisd.org',     tags:['Athletics','CTE','AP'],          vibes:['Friday Night Lights','Houston Adjacent','Go Katy!'],     em:'🐅'},
+    { name:'Houston ISD STEM HS',      city:'Houston, TX',   url:'houstonisd.org',  tags:['STEM','Research','Internships'], vibes:['Future Engineers','City School','Research Ready'],       em:'🔬'},
+  ]},
+  { cat:'California', schools:[
+    { name:'Lowell High School',       city:'San Francisco, CA',url:'sfusd.edu',    tags:['Academic','Debate','STEM'],     vibes:['Selective Public','SF Culture','Academic Pressure'],     em:'🌁'},
+    { name:'Whitney High School',      city:'Cerritos, CA',  url:'abcusd.org',      tags:['Academic','Small School','AP'],  vibes:['Top Ranked','Intense Academics','Community Feel'],        em:'📖'},
+    { name:'Lynbrook High School',     city:'San Jose, CA',  url:'fuhsd.org',       tags:['CS','Math','Engineering'],       vibes:['Silicon Valley Adjacent','CS Pipeline','High Achievers'],  em:'💻'},
+    { name:'Santa Monica HS',          city:'Santa Monica, CA',url:'smmusd.org',    tags:['Arts','Diversity','AP'],         vibes:['Beach School','Artsy','Diverse Perspectives'],            em:'🌊'},
+  ]},
+  { cat:'New York', schools:[
+    { name:'Stuyvesant High School',   city:'New York, NY',  url:'stuy.edu',        tags:['STEM','Math','Competitive'],    vibes:['NYC Prestige','Math Olympiad','Subway Commute'],          em:'🗽'},
+    { name:'Brooklyn Technical HS',   city:'Brooklyn, NY',  url:'bths.edu',        tags:['Engineering','Drafting','STEM'], vibes:['Borough Pride','Hands-On Learning','Diverse'],           em:'🌉'},
+    { name:'Bronx Science',           city:'Bronx, NY',     url:'bxscience.edu',   tags:['Science','Research','Nobel Alumni'],vibes:['Research Legacy','Science Nerds','NYC Energy'],       em:'⚗️'},
+  ]},
+  { cat:'Florida', schools:[
+    { name:'Dreyfoos School of Arts',  city:'West Palm Beach, FL',url:'palmbeachschools.org',tags:['Fine Arts','Performing Arts','Creative'],vibes:['Artsy Vibes','Performance Focus','Creative Energy'],em:'🎭'},
+    { name:'Pine Crest School',        city:'Fort Lauderdale, FL',url:'pinecrest.edu',tags:['College Prep','Athletics','Boarding'],vibes:['Private School Energy','College Prep','Sports Strong'],em:'🎓'},
+    { name:'Palm Beach Gardens HS',    city:'Palm Beach Gardens, FL',url:'palmbeachschools.org',tags:['IB','Athletics','Business'],vibes:['IB Programme','Beach Town','Active Lifestyle'],em:'🌴'},
+  ]},
+  { cat:'Georgia', schools:[
+    { name:'Gwinnett School of Math, Sci & Tech',city:'Lawrenceville, GA',url:'gwinnett.k12.ga.us',tags:['STEM','Research','Selective'],vibes:['STEM Magnet','Future Scientists','Atlanta Adjacent'],em:'🔭'},
+    { name:'North Atlanta High School',city:'Atlanta, GA',   url:'atlanta.k12.ga.us',tags:['IB','Arts','Diverse'],         vibes:['City School','IB Strong','Diverse & Driven'],            em:'🏙️'},
+    { name:'Lambert High School',      city:'Suwanee, GA',   url:'forsyth.k12.ga.us',tags:['AP','Athletics','Music'],      vibes:['Suburb Success','Academic & Athletic','Go Longhorns'],  em:'🤘'},
+  ]},
+  { cat:'Top Private / Boarding Schools', schools:[
+    { name:'Phillips Exeter Academy',  city:'Exeter, NH',    url:'exeter.edu',      tags:['College Prep','Harkness Method','Boarding'],vibes:['Elite Boarding','Discussion-Based','Legacy School'],em:'📜'},
+    { name:'Andover (Phillips Academy)',city:'Andover, MA',  url:'andover.edu',     tags:['Boarding','Ivy Feeder','Arts'], vibes:['Ultra Prestige','Future Ivies','Global Network'],         em:'🏰'},
+    { name:'The Hotchkiss School',     city:'Lakeville, CT', url:'hotchkiss.org',   tags:['Boarding','STEM','Arts'],       vibes:['New England Prestige','Small Community','Outdoors'],     em:'🌄'},
+    { name:'Sidwell Friends School',   city:'Washington, DC',url:'sidwell.edu',     tags:['Social Justice','College Prep','Day School'],vibes:['DC Elite','Presidents Kids','Quaker Values'],em:'🕊️'},
+  ]},
+];
+
+// ── STATE ──────────────────────────────────────
+let mode = 'col';
+let activeSchool = null;
+let apiKey = '';
+let colState = { name:'', major:'', deadline:'' };
+let hsState  = { name:'', grade:'', interests:[] };
+let visitedSchools = [];
+let dashData = null;
+
+// ── INIT ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  spawnStars('col');
+  apiKey = sessionStorage.getItem('cc_key') || '';
+  document.getElementById('pg-home').classList.add('active');
+  buildHdrNav();
+});
+
+function spawnStars(m) {
+  const el = document.getElementById('stars');
+  if (!el) return;
+  el.innerHTML = '';
+  const isHs = (m || mode) === 'hs';
+
+  // HS: more stars, coloured, faster
+  // College: fewer stars, white/gold, slower, dimmer
+  const count  = isHs ? 130 : 60;
+  const colors = isHs
+    ? ['#fff','#c084fc','#f0abfc','#67e8f9','#a5f3fc','#fbcfe8','#e879f9']
+    : ['#fff','#fff','#fff','#f0cc7a','#fff'];
+
+  for (let i = 0; i < count; i++) {
+    const s  = document.createElement('div');
+    s.className = 'star';
+    const sz  = isHs ? Math.random() * 2.5 + .6 : Math.random() * 1.6 + .3;
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    const op  = isHs ? (Math.random() * .5 + .2) : (Math.random() * .25 + .05);
+    const op2 = isHs ? Math.min(1, op + .45) : Math.min(.7, op + .3);
+    const dur = isHs ? (Math.random() * 2.5 + 1.5) : (Math.random() * 4 + 3);
+    s.style.cssText =
+      `width:${sz}px;height:${sz}px;` +
+      `top:${Math.random()*100}%;left:${Math.random()*100}%;` +
+      `--sc:${col};--op:${op.toFixed(2)};--op2:${op2.toFixed(2)};` +
+      `--d:${dur.toFixed(1)}s;--dl:${(Math.random()*dur).toFixed(1)}s;` +
+      (isHs ? `background:${col};box-shadow:0 0 ${sz*2}px ${col};` : `background:${col};`);
+    el.appendChild(s);
+  }
+}
+
+// ── HEADER NAV ─────────────────────────────────
+function buildHdrNav() {
+  const nav = document.getElementById('hdr-nav');
+  const isHome = !document.querySelector('.page.active') ||
+                  document.getElementById('pg-home').classList.contains('active');
+  nav.innerHTML = `
+    <button class="hdr-btn" onclick="goHome()">🏠 Home</button>
+    <button class="hdr-btn" id="hdr-dir-btn" onclick="goDirFromNav()" style="display:none">📚 Directory</button>
+    <button class="hdr-btn" id="hdr-api-btn" onclick="showKeyOverlay()">🔑 API Key</button>
+  `;
+}
+
+function goDirFromNav() {
+  buildDir();
+  nav('pg-dir');
+}
+
+// ── NAVIGATION ─────────────────────────────────
+function nav(pgId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById(pgId);
+  if (pg) pg.classList.add('active');
+  // Show/hide dir button
+  const dirBtn = document.getElementById('hdr-dir-btn');
+  if (dirBtn) dirBtn.style.display = (pgId === 'pg-home') ? 'none' : 'inline-flex';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goHome() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-home').classList.add('active');
+  const dirBtn = document.getElementById('hdr-dir-btn');
+  if (dirBtn) dirBtn.style.display = 'none';
+}
+
+// ── MODE ──────────────────────────────────────
+function startMode(m) {
+  mode = m;
+  document.body.dataset.mode = m;
+  const badge = document.getElementById('mode-badge');
+  if (badge) badge.textContent = m === 'col' ? 'College' : 'High School';
+  spawnStars(m);
+  buildDir();
+  nav('pg-dir');
+}
+
+// ── API KEY ────────────────────────────────────
+function showKeyOverlay() {
+  document.getElementById('key-overlay').style.display = 'flex';
+  document.getElementById('key-input').value = apiKey || '';
+}
+
+function saveKey() {
+  const k = document.getElementById('key-input').value.trim();
+  if (!k) return;
+  apiKey = k;
+  sessionStorage.setItem('cc_key', k);
+  document.getElementById('key-overlay').style.display = 'none';
+}
+
+// ── DIRECTORY ──────────────────────────────────
+function buildDir() {
+  const dir = mode === 'col' ? COL_DIR : HS_DIR;
+  document.getElementById('dir-title').textContent = mode === 'col' ? 'Explore Colleges 🎓' : 'Explore High Schools 🔥';
+  document.getElementById('dir-sub').textContent   = mode === 'col'
+    ? 'Pick a college to explore real programs, clubs, and scholarships.'
+    : 'Pick your school to discover clubs, AP courses, and college prep resources.';
+
+  // Build filter pills
+  const cats = dir.map(c => c.cat);
+  document.getElementById('filter-row').innerHTML =
+    `<span class="fpill on" onclick="dirFilter('',this)">All</span>` +
+    cats.map(c => `<span class="fpill" onclick="dirFilter('${c}',this)">${c}</span>`).join('');
+
+  renderDirBody(dir, '');
+}
+
+let dirFilterActive = '';
+
+function dirFilter(cat, el) {
+  dirFilterActive = cat;
+  document.querySelectorAll('.fpill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  const dir = mode === 'col' ? COL_DIR : HS_DIR;
+  const q = document.getElementById('dir-search').value;
+  renderDirBody(dir, q);
+}
+
+function dirSearch(q) {
+  const dir = mode === 'col' ? COL_DIR : HS_DIR;
+  renderDirBody(dir, q);
+}
+
+function renderDirBody(dir, query) {
+  const q = query.toLowerCase();
+  const body = document.getElementById('dir-body');
+  let html = '';
+  dir.forEach(cat => {
+    if (dirFilterActive && cat.cat !== dirFilterActive) return;
+    const schools = cat.schools.filter(s =>
+      !q || s.name.toLowerCase().includes(q) || s.city.toLowerCase().includes(q) ||
+      s.tags.some(t => t.toLowerCase().includes(q)) || s.vibes.some(v => v.toLowerCase().includes(q))
+    );
+    if (!schools.length) return;
+    html += `<div class="cat-section">
+      <div class="cat-label">${cat.cat}</div>
+      <div class="school-grid">` +
+      schools.map((s, i) => {
+        const idx = dir.reduce((acc, c) => acc + (c === cat ? 0 : c.schools.length), 0) +
+                    cat.schools.indexOf(s);
+        const allSchools = dir.flatMap(c => c.schools);
+        const globalIdx = allSchools.indexOf(s);
+        const tags = s.tags.slice(0,2).map(t => `<span class="stile-tag">${t}</span>`).join('');
+        const vibes = s.vibes.slice(0,2).map(v => `<span class="stile-vibe">${v}</span>`).join('');
+        return `<div class="stile" onclick="pickSchool(${globalIdx})">
+          <span class="stile-em">${s.em}</span>
+          <div class="stile-name">${s.name}</div>
+          <div class="stile-meta">📍 ${s.city}</div>
+          <div class="stile-tags">${tags}${vibes}</div>
+          <span class="stile-arrow">→</span>
+        </div>`;
+      }).join('') +
+      `</div></div>`;
+  });
+  if (!html) html = '<div class="no-results">No schools matched your search 🤷</div>';
+  body.innerHTML = html;
+}
+
+function pickSchool(globalIdx) {
+  const dir = mode === 'col' ? COL_DIR : HS_DIR;
+  const all = dir.flatMap(c => c.schools);
+  activeSchool = all[globalIdx];
+  buildQuiz();
+  nav('pg-quiz');
+}
+
+// ── QUIZ ───────────────────────────────────────
+function buildQuiz() {
+  const s = activeSchool;
+  document.getElementById('qb-icon').textContent = s.em;
+  document.getElementById('qb-name').textContent = s.name;
+  document.getElementById('qb-meta').textContent = `📍 ${s.city}`;
+
+  if (mode === 'col') buildColQuiz();
+  else               buildHsQuiz();
+
+  showQStep(1);
+}
+
+function buildColQuiz() {
+  const qWrap = document.getElementById('q-inner');
+  qWrap.innerHTML = `
+    <!-- Step 1: Name -->
+    <div class="q-block" id="qs-1">
+      <div class="q-badge">Step 1 of 3</div>
+      <div class="q-h">What's your name? 👋</div>
+      <div class="q-sub">We'll personalise your dashboard just for you.</div>
+      <input class="q-field" id="col-name" type="text" placeholder="Your first name..." autocomplete="given-name"/>
+      <div class="q-nav">
+        <span></span>
+        <button class="btn" onclick="colQ2()">Next →</button>
+      </div>
+    </div>
+    <!-- Step 2: Major -->
+    <div class="q-block" id="qs-2">
+      <div class="q-badge">Step 2 of 3</div>
+      <div class="q-h">What's your major? 📖</div>
+      <div class="q-sub">We'll find programs, research, and clubs that match your field.</div>
+      <div class="maj-grid" id="maj-grid"></div>
+      <div class="q-nav">
+        <button class="q-back" onclick="showQStep(1)">← Back</button>
+        <button class="btn" onclick="colQ3()" id="col-maj-next" disabled>Next →</button>
+      </div>
+    </div>
+    <!-- Step 3: Deadline -->
+    <div class="q-block" id="qs-3">
+      <div class="q-badge">Step 3 of 3</div>
+      <div class="q-h">Application deadline? 📅</div>
+      <div class="q-sub">We'll count down the days and prioritise time-sensitive opportunities.</div>
+      <input class="q-field" id="col-dl" type="date"/>
+      <div style="margin-top:.8rem;display:flex;gap:.38rem;flex-wrap:wrap" id="dl-chips"></div>
+      <div class="q-nav">
+        <button class="q-back" onclick="showQStep(2)">← Back</button>
+        <button class="btn" onclick="startLoad()">Build My Dashboard 🚀</button>
+      </div>
+    </div>`;
+
+  buildMajorGrid('maj-grid');
+  buildDeadlineChips();
+}
+
+function buildMajorGrid(id) {
+  const majors = [
+    { i:'💻', l:'Computer Science', v:'Computer Science' },
+    { i:'📊', l:'Business',          v:'Business Administration' },
+    { i:'🧬', l:'Bio / Pre-Med',     v:'Biology / Pre-Med' },
+    { i:'🧠', l:'Psychology',        v:'Psychology' },
+    { i:'⚙️', l:'Engineering',       v:'Engineering' },
+    { i:'🏥', l:'Nursing / Health',  v:'Nursing / Health Sciences' },
+    { i:'⚖️', l:'Poli Sci / Law',    v:'Political Science / Law' },
+    { i:'📡', l:'Communications',    v:'Communications / Media' },
+    { i:'🎨', l:'Fine Arts / Design',v:'Fine Arts / Design' },
+    { i:'📚', l:'Education',         v:'Education' },
+  ];
+  document.getElementById(id).innerHTML = majors.map(m =>
+    `<div class="maj-tile" data-val="${m.v}" onclick="cpickMaj(this,'${m.v}')">
+       <span class="mti">${m.i}</span><span class="mtl">${m.l}</span>
+     </div>`).join('');
+}
+
+function buildDeadlineChips() {
+  const today = new Date();
+  const chips = [
+    { l:'Nov 1 (EA)', d: new Date(today.getFullYear(), 10, 1) },
+    { l:'Nov 15',     d: new Date(today.getFullYear(), 10, 15) },
+    { l:'Dec 1 (ED)', d: new Date(today.getFullYear(), 11, 1) },
+    { l:'Jan 1 (RD)', d: new Date(today.getFullYear()+1, 0, 1) },
+    { l:'Jan 15',     d: new Date(today.getFullYear()+1, 0, 15) },
+  ];
+  document.getElementById('dl-chips').innerHTML = chips.map(c => {
+    const iso = c.d.toISOString().split('T')[0];
+    return `<span class="chip" onclick="document.getElementById('col-dl').value='${iso}'">${c.l}</span>`;
+  }).join('');
+}
+
+function cpickMaj(el, val) {
+  document.querySelectorAll('.maj-tile').forEach(t => t.classList.remove('pk'));
+  el.classList.add('pk');
+  colState.major = val;
+  document.getElementById('col-maj-next').disabled = false;
+}
+
+function colQ2() {
+  const n = document.getElementById('col-name').value.trim();
+  if (!n) { document.getElementById('col-name').focus(); return; }
+  colState.name = n;
+  showQStep(2);
+}
+
+function colQ3() {
+  if (!colState.major) return;
+  showQStep(3);
+}
+
+function buildHsQuiz() {
+  const qWrap = document.getElementById('q-inner');
+  qWrap.innerHTML = `
+    <!-- Step 1: Name -->
+    <div class="q-block" id="qs-1">
+      <div class="q-badge">Step 1 of 3</div>
+      <div class="q-h">Hey, what's your name? 👋</div>
+      <div class="q-sub">We'll build your personalised school dashboard fr fr.</div>
+      <input class="q-field" id="hs-name" type="text" placeholder="Your first name..." autocomplete="given-name"/>
+      <div class="q-nav">
+        <span></span>
+        <button class="btn" onclick="hsQ2()">Next →</button>
+      </div>
+    </div>
+    <!-- Step 2: Grade -->
+    <div class="q-block" id="qs-2">
+      <div class="q-badge">Step 2 of 3</div>
+      <div class="q-h">What grade are you in? 📚</div>
+      <div class="q-sub">We'll show what matters most for your year.</div>
+      <div class="grade-grid" id="grade-grid"></div>
+      <div class="q-nav">
+        <button class="q-back" onclick="showQStep(1)">← Back</button>
+        <button class="btn" onclick="hsQ3()" id="hs-grade-next" disabled>Next →</button>
+      </div>
+    </div>
+    <!-- Step 3: Interests -->
+    <div class="q-block" id="qs-3">
+      <div class="q-badge">Step 3 of 3</div>
+      <div class="q-h">What are you into? ✨</div>
+      <div class="q-sub">Pick up to 3 interests — we'll match your best opportunities.</div>
+      <div class="int-grid" id="int-grid"></div>
+      <div class="q-hint" id="int-hint" style="text-align:center;margin:.5rem 0;font-size:.72rem;color:var(--t3)">Pick up to 3</div>
+      <div class="q-nav">
+        <button class="q-back" onclick="showQStep(2)">← Back</button>
+        <button class="btn" onclick="startLoad()" id="hs-int-next" disabled>Let's go 🔥</button>
+      </div>
+    </div>`;
+
+  buildGradeGrid('grade-grid');
+  buildInterestGrid('int-grid');
+}
+
+function buildGradeGrid(id) {
+  const grades = [
+    { g:'9', l:'Freshman' }, { g:'10', l:'Sophomore' },
+    { g:'11', l:'Junior' },  { g:'12', l:'Senior' },
+  ];
+  document.getElementById(id).innerHTML = grades.map(g =>
+    `<div class="grade-tile" data-val="${g.g}" onclick="hpickGrade(this,'${g.g}')">
+       <span class="gtn">${g.g}</span><span class="gtl">${g.l}</span>
+     </div>`).join('');
+}
+
+function buildInterestGrid(id) {
+  const ints = [
+    { i:'🔬', l:'STEM & Science',       v:'STEM & Science' },
+    { i:'🎨', l:'Arts & Music',          v:'Arts & Music' },
+    { i:'🏆', l:'Sports',                v:'Sports & Athletics' },
+    { i:'💡', l:'Business',              v:'Business & Entrepreneurship' },
+    { i:'🤝', l:'Community Service',     v:'Community Service' },
+    { i:'💻', l:'Technology',            v:'Technology & Coding' },
+    { i:'🎤', l:'Debate & Speech',        v:'Debate & Public Speaking' },
+    { i:'✍️', l:'Writing',               v:'Writing & Journalism' },
+    { i:'🏥', l:'Healthcare',            v:'Healthcare & Medicine' },
+  ];
+  document.getElementById(id).innerHTML = ints.map(i =>
+    `<div class="int-tile" data-val="${i.v}" onclick="hpickInt(this)">
+       <span class="int-icon">${i.i}</span>${i.l}
+     </div>`).join('');
+}
+
+function hpickGrade(el, val) {
+  document.querySelectorAll('.grade-tile').forEach(t => t.classList.remove('pk'));
+  el.classList.add('pk');
+  hsState.grade = val;
+  document.getElementById('hs-grade-next').disabled = false;
+}
+
+function hpickInt(el) {
+  const val = el.dataset.val;
+  if (el.classList.contains('pk')) {
+    el.classList.remove('pk');
+    hsState.interests = hsState.interests.filter(v => v !== val);
+  } else {
+    if (hsState.interests.length >= 3) return;
+    el.classList.add('pk');
+    hsState.interests.push(val);
+  }
+  const cnt = hsState.interests.length;
+  document.getElementById('int-hint').textContent = cnt
+    ? `${cnt}/3 selected${cnt === 3 ? ' (max)' : ''}` : 'Pick up to 3';
+  document.getElementById('hs-int-next').disabled = cnt === 0;
+}
+
+function hsQ2() {
+  const n = document.getElementById('hs-name').value.trim();
+  if (!n) { document.getElementById('hs-name').focus(); return; }
+  hsState.name = n; hsState.interests = [];
+  showQStep(2);
+}
+
+function hsQ3() {
+  if (!hsState.grade) return;
+  showQStep(3);
+}
+
+function showQStep(n) {
+  document.querySelectorAll('.q-block').forEach(b => b.classList.remove('active'));
+  const b = document.getElementById(`qs-${n}`);
+  if (b) b.classList.add('active');
+  // Progress
+  const steps = document.querySelectorAll('.prog-seg');
+  steps.forEach((s, i) => {
+    s.classList.remove('done','on');
+    if (i < n-1) s.classList.add('done');
+    else if (i === n-1) s.classList.add('on');
+  });
+  const cur = document.querySelector('.prog-cur');
+  if (cur) cur.textContent = `Step ${n} of 3`;
+}
+
+// ── LOADING ────────────────────────────────────
+function startLoad() {
+  if (mode === 'col') {
+    const dl = document.getElementById('col-dl').value;
+    colState.deadline = dl || new Date(Date.now() + 86400000*90).toISOString().split('T')[0];
+  }
+
+  const steps = mode === 'col'
+    ? ['Analyzing school info…','Matching your major…','Finding programs…','Discovering student orgs…','Pulling scholarship info…','Building your dashboard…']
+    : ['Analyzing your school…','Matching AP & IB courses…','Finding clubs & activities…','Looking up sports programs…','Pulling scholarship info…','Building your dashboard…'];
+
+  const url = `https://${activeSchool.url}`;
+  document.getElementById('load-title').textContent = `Loading ${activeSchool.name}`;
+  document.getElementById('load-sub').textContent   = mode === 'col'
+    ? `Searching the real ${activeSchool.name} website for opportunities just for you.`
+    : `Pulling real info from ${activeSchool.name}'s official site. Hang tight!`;
+  document.getElementById('load-url').textContent   = url;
+
+  const stepsEl = document.getElementById('load-steps');
+  stepsEl.innerHTML = steps.map((s, i) =>
+    `<div class="ls" id="ls-${i}"><div class="ls-dot"></div>${s}</div>`).join('');
+
+  nav('pg-load');
+
+  let i = 0;
+  const t = setInterval(() => {
+    if (i > 0) { const prev = document.getElementById(`ls-${i-1}`); if(prev){prev.classList.remove('act');prev.classList.add('done');}}
+    if (i < steps.length) { const cur = document.getElementById(`ls-${i}`); if(cur) cur.classList.add('act');}
+    i++;
+    if (i > steps.length) clearInterval(t);
+  }, 900);
+
+  setTimeout(() => fetchData(), 1000);
+
+  // Show a message after 20 seconds so users know it's still working
+  setTimeout(() => {
+    const sub = document.getElementById('load-sub');
+    if (sub && document.getElementById('pg-load').classList.contains('active')) {
+      sub.innerHTML = 'Still searching the web for real ' + activeSchool.name + ' data. This can take up to 60 seconds — hang tight!';
+      sub.style.color = '#c9a84c';
+    }
+  }, 20000);
+
+  // Show a stronger message after 60 seconds
+  setTimeout(() => {
+    const sub = document.getElementById('load-sub');
+    if (sub && document.getElementById('pg-load').classList.contains('active')) {
+      sub.innerHTML = 'Almost done! If nothing loads in the next 30 seconds, try refreshing and picking a different school.';
+      sub.style.color = '#e0635a';
+    }
+  }, 60000);
+}
+
+// ── API CALL ───────────────────────────────────
+async function fetchData() {
+  if (!apiKey) {
+    showKeyOverlay();
+    return;
+  }
+
+  const prompt = mode === 'col' ? buildColPrompt() : buildHsPrompt();
+
+  // 90-second timeout so it never hangs forever
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      signal: controller.signal,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-haiku-4.5',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        alert('Invalid API key. Please enter a valid OpenRouter API key.');
+        showKeyOverlay();
+        return;
+      }
+      throw new Error(data.error?.message || 'API error');
+    }
+
+    const text = data.choices?.[0]?.message?.content || '';
+    console.log('API returned', text.length, 'chars of content');
+    console.log('First 200 chars:', text.substring(0, 200));
+    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    let parsed;
+    try {
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+    } catch {
+      parsed = mode === 'col' ? colFallback() : hsFallback();
+    }
+
+    clearTimeout(timeoutId);
+    dashData = parsed;
+    if (mode === 'col') buildColDash(parsed);
+    else               buildHsDash(parsed);
+
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error('API error:', err);
+    console.log('Full error details:', err.message, err.stack);
+    if (err.name === 'AbortError') {
+      alert('Search took too long. Loading sample data for ' + activeSchool.name + ' — you can retry with a different school.');
+    }
+    const fb = mode === 'col' ? colFallback() : hsFallback();
+    dashData = fb;
+    if (mode === 'col') buildColDash(fb);
+    else               buildHsDash(fb);
+  }
+}
+
+// ── PROMPTS ────────────────────────────────────
+function buildColPrompt() {
+  const { name, major, deadline } = colState;
+  const s = activeSchool;
+  return `You are a college researcher. Search ${s.name}'s official website (${s.url}) for real, accurate data.
+
+Student: ${name}, studying ${major} at ${s.name} (${s.city}), deadline ${deadline}.
+
+IMPORTANT: Return ONLY valid JSON, no markdown, no code fences. Every item needs a real https:// URL.
+
+{
+  "source_url": "https://${s.url}",
+  "source_description": "Data about ${s.name}",
+  "match_score": <integer 60-98>,
+  "links": { "academics":"https://...","research":"https://...","clubs":"https://...","financial_aid":"https://...","registrar":"https://...","career":"https://..." },
+  "stats": { "total_opportunities":<int>, "clubs_count":<int>, "scholarships_count":<int> },
+  "academic_programs": [{"title":"...","type":"Academic Program","description":"...","deadline":"...","source":"https://...","url":"https://..."}],
+  "research_internships": [{"title":"...","type":"Research","description":"...","deadline":"...","source":"https://...","url":"https://..."}],
+  "clubs": [{"title":"...","type":"Student Org","description":"...","deadline":"Ongoing","source":"https://...","url":"https://..."}],
+  "scholarships": [{"title":"...","type":"Scholarship","description":"...","deadline":"...","source":"https://...","url":"https://..."}],
+  "schedule": {
+    "intro":"...",
+    "registrar_url":"https://...",
+    "days":[{"name":"Monday","type":"Class Day","blocks":[{"time":"9:00 AM","name":"Real course","location":"Real building","color":"#c9a84c","url":"https://..."}]}],
+    "workload":[{"label":"Weekly Study Hours","value":18,"max":40,"color":"#c9a84c"},{"label":"Credit Hours","value":15,"max":21,"color":"#3dd6c0"},{"label":"Assignments/Week","value":8,"max":20,"color":"#9d7fe8"},{"label":"Social Hours","value":10,"max":20,"color":"#5baee8"}]
+  },
+  "campus_life": { "sections":[{"heading":"...","content":"...","url":"https://..."}] },
+  "scholarship_advice": "..."
+}
+
+Each array needs 5+ items with real URLs from ${s.url}.`;
+}
+
+function buildHsPrompt() {
+  const { name, grade, interests } = hsState;
+  const s = activeSchool;
+  const interestStr = interests.join(', ') || 'General';
+  const gradeNum = parseInt(grade) || 11;
+  const gradYear = new Date().getFullYear() + (12 - gradeNum);
+  return `You are a high school researcher. Search ${s.name}'s official website (${s.url || s.name + '.edu'}) for real data.
+
+Student: ${name}, Grade ${grade} at ${s.name} (${s.city}), interests: ${interestStr}, graduating ${gradYear}.
+
+IMPORTANT: Return ONLY valid JSON, no markdown, no code fences. Every item needs a real https:// URL.
+
+{
+  "source_url": "https://${s.url || s.name.toLowerCase().replace(/ /g,'') + '.edu'}",
+  "source_description": "Data about ${s.name}",
+  "match_score": <integer 60-98>,
+  "links": { "academics":"https://...","clubs":"https://...","athletics":"https://...","scholarships":"https://...","counseling":"https://...","cte":"https://..." },
+  "stats": { "total_opportunities":<int>, "clubs_count":<int>, "scholarships_count":<int>, "grad_year":${gradYear} },
+  "academic_programs": [{"title":"Real AP/IB course name","type":"AP Course","description":"...","deadline":"...","source":"https://...","url":"https://..."}],
+  "career_programs": [{"title":"Real CTE program","type":"CTE Program","description":"...","deadline":"...","source":"https://...","url":"https://..."}],
+  "clubs": [{"title":"Real club name","type":"Club","description":"...","deadline":"Ongoing","source":"https://...","url":"https://..."}],
+  "sports": [{"title":"Sport name","type":"Varsity Sport","description":"...","deadline":"Tryout month","source":"https://...","url":"https://..."}],
+  "scholarships": [{"title":"...","type":"Scholarship","description":"...","deadline":"...","source":"https://...","url":"https://..."}],
+  "schedule": {
+    "intro":"...",
+    "registrar_url":"https://...",
+    "days":[{"name":"Monday","type":"Regular Day","blocks":[{"time":"7:30 AM","name":"Period name","location":"Room","color":"#a855f7","url":"https://..."}]}],
+    "workload":[{"label":"Daily Study Hours","value":2,"max":6,"color":"#a855f7"},{"label":"Classes/Day","value":6,"max":8,"color":"#ec4899"},{"label":"Assignments/Week","value":10,"max":20,"color":"#06b6d4"},{"label":"Activities/Week","value":3,"max":7,"color":"#34c98a"}]
+  },
+  "college_prep": {
+    "sections":[{"heading":"...","content":"...","url":"https://..."}],
+    "timeline":[{"label":"SAT/ACT Prep","pct":${gradeNum>=11?70:40}},{"label":"Course Rigor","pct":${gradeNum>=10?65:35}},{"label":"Extracurriculars","pct":${gradeNum>=11?60:30}},{"label":"College List","pct":${gradeNum>=11?55:20}},{"label":"Essays","pct":${gradeNum>=12?80:15}}]
+  },
+  "daily_life": { "sections":[{"heading":"...","content":"...","url":"https://..."}] },
+  "scholarship_advice": "..."
+}
+
+Each array needs 5+ items. Use REAL names from ${s.name}.`;
+}
+
+// ── FALLBACKS ──────────────────────────────────
+function colFallback() {
+  const s = activeSchool;
+  const { name, major } = colState;
+  return {
+    source_url: `https://${s.url}`,
+    source_description: `Sample data for ${s.name}`,
+    match_score: 82,
+    links: { academics:`https://${s.url}/academics`, clubs:`https://${s.url}/studentlife`, financial_aid:`https://${s.url}/financialaid`, registrar:`https://${s.url}/registrar` },
+    stats: { total_opportunities: 42, clubs_count: 180, scholarships_count: 28 },
+    academic_programs: [
+      { title:`${major} Bachelor's Program`, type:'Academic Program', description:`${s.name}'s ${major} program offers rigorous coursework, real-world projects, and access to leading faculty in the field.`, deadline:'Semester start', url:`https://${s.url}/academics` },
+      { title:'Honors Thesis Track', type:'Honors Program', description:`Top students in ${major} can pursue an independent research thesis for departmental honors.`, deadline:'Junior year', url:`https://${s.url}/honors` },
+      { title:'Study Abroad Program', type:'International', description:'Semester exchange partnerships with universities across Europe, Asia, and Latin America.', deadline:'Rolling', url:`https://${s.url}/studyabroad` },
+      { title:'Interdisciplinary Certificate', type:'Certificate', description:`Add a certificate in Data Science, Entrepreneurship, or Global Studies alongside your ${major} degree.`, deadline:'Open enrollment', url:`https://${s.url}/academics` },
+      { title:'Co-op & Career Track', type:'Cooperative Education', description:'Alternate semesters of coursework with paid industry positions through the co-op program.', deadline:'Spring registration', url:`https://${s.url}/career` },
+    ],
+    research_internships: [
+      { title:'Undergraduate Research Fellows', type:'Research', description:'Competitive paid fellowship for students to work alongside faculty on published research projects.', deadline:'March 1', url:`https://${s.url}/research` },
+      { title:'Summer Research Institute', type:'Summer Program', description:'8-week intensive summer research experience with housing and a stipend.', deadline:'February 15', url:`https://${s.url}/research` },
+      { title:'Industry Internship Network', type:'Internship', description:`Employer network connecting ${s.name} students to internships at 500+ companies.`, deadline:'Ongoing', url:`https://${s.url}/career` },
+      { title:'Lab Assistant Program', type:'Lab Research', description:'Work as a paid lab assistant in science or engineering labs during the school year.', deadline:'Rolling', url:`https://${s.url}/research` },
+      { title:'Community Research Grant', type:'Community Research', description:'$2,000 grant to conduct original research addressing a local community challenge.', deadline:'October 1', url:`https://${s.url}/research` },
+    ],
+    clubs: [
+      { title:`${major} Students Association`, type:'Student Org', description:`Connects students in ${major} through networking events, speaker series, and career fairs.`, deadline:'Open', url:`https://${s.url}/studentlife` },
+      { title:'Debate Team', type:'Academic Club', description:'Competitive parliamentary debate team competing at regional and national tournaments.', deadline:'Fall tryouts', url:`https://${s.url}/studentlife` },
+      { title:'Student Government', type:'Leadership', description:'Elected body representing 5,000+ students on campus policy and resource allocation.', deadline:'Spring elections', url:`https://${s.url}/studentlife` },
+      { title:'Cultural Exchange Club', type:'Cultural Org', description:'Celebrates campus diversity through international food festivals, cultural showcases, and language exchange.', deadline:'Open', url:`https://${s.url}/studentlife` },
+      { title:'Entrepreneurship Society', type:'Business Club', description:'Pitch competitions, startup workshops, and connections to the local startup ecosystem.', deadline:'Open', url:`https://${s.url}/studentlife` },
+    ],
+    scholarships: [
+      { title:'Merit Excellence Scholarship', type:'Merit Scholarship', description:'$8,000–$20,000 per year for students with a 3.8+ GPA. Renewable with continued academic performance.', deadline:'December 1', url:`https://${s.url}/financialaid` },
+      { title:'Need-Based Grant Program', type:'Need-Based Aid', description:'Grants covering up to full tuition for students demonstrating financial need through FAFSA.', deadline:'FAFSA priority date', url:`https://${s.url}/financialaid` },
+      { title:`${major} Department Award`, type:'Departmental Scholarship', description:`$3,000 scholarship for incoming ${major} students with strong academic records.`, deadline:'February 1', url:`https://${s.url}/financialaid` },
+      { title:'Community Leadership Award', type:'Leadership Scholarship', description:'$5,000 for students who demonstrated outstanding community service in high school.', deadline:'January 15', url:`https://${s.url}/financialaid` },
+      { title:'First-Generation Scholar', type:'Access Scholarship', description:'Full scholarship package for first-generation college students demonstrating need and achievement.', deadline:'December 15', url:`https://${s.url}/financialaid` },
+    ],
+    schedule: {
+      intro: `A typical week for a ${major} student at ${s.name} balances lectures, labs, and campus life.`,
+      registrar_url: `https://${s.url}/registrar`,
+      days: [
+        { name:'Monday', type:'Class Day', blocks:[
+          { time:'9:00 AM', name:`Intro to ${major}`, location:'Main Hall 101', color:'#c9a84c', url:`https://${s.url}/registrar` },
+          { time:'11:00 AM', name:'Elective Course', location:'Science Building', color:'#3dd6c0', url:`https://${s.url}/registrar` },
+          { time:'1:00 PM', name:'Lunch', location:'Student Union', color:'#9d7fe8', url:`https://${s.url}/dining` },
+          { time:'3:00 PM', name:'Lab / Discussion Section', location:'Research Lab', color:'#c9a84c', url:`https://${s.url}/registrar` },
+          { time:'5:30 PM', name:'Student Org Meeting', location:'Student Center', color:'#5baee8', url:`https://${s.url}/studentlife` },
+        ]},
+        { name:'Tuesday', type:'Lab Day', blocks:[
+          { time:'10:00 AM', name:'Research Lab', location:'Research Building', color:'#3dd6c0', url:`https://${s.url}/research` },
+          { time:'12:00 PM', name:'Office Hours', location:"Professor's Office", color:'#9d7fe8', url:`https://${s.url}/academics` },
+          { time:'2:00 PM', name:'Study Group', location:'Library', color:'#c9a84c', url:`https://${s.url}/library` },
+        ]},
+        { name:'Wednesday', type:'Class Day', blocks:[
+          { time:'9:00 AM', name:`${major} Seminar`, location:'Seminar Room', color:'#c9a84c', url:`https://${s.url}/registrar` },
+          { time:'11:00 AM', name:'Core Curriculum', location:'Lecture Hall', color:'#e0635a', url:`https://${s.url}/registrar` },
+          { time:'1:00 PM', name:'Lunch with Club', location:'Student Union', color:'#9d7fe8', url:`https://${s.url}/dining` },
+          { time:'3:30 PM', name:'Fitness / Free Time', location:'Rec Center', color:'#34c98a', url:`https://${s.url}/recreation` },
+        ]},
+        { name:'Thursday', type:'Flex Day', blocks:[
+          { time:'10:00 AM', name:'Career Center Visit', location:'Career Center', color:'#5baee8', url:`https://${s.url}/career` },
+          { time:'12:00 PM', name:'Club Meeting', location:'Student Center', color:'#9d7fe8', url:`https://${s.url}/studentlife` },
+          { time:'3:00 PM', name:'Independent Study', location:'Library or Dorm', color:'#c9a84c', url:`https://${s.url}/library` },
+        ]},
+        { name:'Friday', type:'Light Day', blocks:[
+          { time:'10:00 AM', name:'Elective Lecture', location:'Arts Building', color:'#3dd6c0', url:`https://${s.url}/registrar` },
+          { time:'12:30 PM', name:'Campus Event / Lunch', location:'Student Union', color:'#e8a030', url:`https://${s.url}/events` },
+          { time:'4:00 PM', name:'Weekend starts!', location:'Explore Campus/City', color:'#9d7fe8', url:`https://${s.url}` },
+        ]},
+      ],
+      workload:[
+        { label:'Weekly Study Hours', value:18, max:40, color:'#c9a84c' },
+        { label:'Credit Hours/Semester', value:15, max:21, color:'#3dd6c0' },
+        { label:'Assignments/Week', value:8, max:20, color:'#9d7fe8' },
+        { label:'Social & Campus Hours', value:10, max:20, color:'#5baee8' },
+      ],
+    },
+    campus_life: { sections:[
+      { heading:'Morning Routine', content:`${s.name} students typically start their day around 8–9 AM, grabbing coffee and reviewing notes before class. The campus energy is calm but productive in the mornings.`, url:`https://${s.url}` },
+      { heading:`Academic Culture at ${s.name}`, content:`${s.name} is known for its collaborative academic culture. Students form study groups early in the semester and use office hours frequently.`, url:`https://${s.url}/academics` },
+      { heading:'Social Scene & Weekends', content:'Weekends are a mix of campus events, off-campus exploration, and downtime. Sports games and cultural festivals are popular.', url:`https://${s.url}/studentlife` },
+      { heading:`Living in ${s.city}`, content:`${s.city} offers students incredible opportunities for internships, cultural experiences, dining, and entertainment beyond campus.`, url:`https://${s.url}` },
+      { heading:'Career & Networking', content:`${s.name}'s career center connects students with alumni networks, campus recruiters, and professional development workshops year-round.`, url:`https://${s.url}/career` },
+    ]},
+    scholarship_advice: `${name}, as a ${major} student at ${s.name}, start by filling out FAFSA before the priority deadline. Check ${s.name}'s financial aid portal for departmental and merit scholarships — many are available to current students. Apply to the ${major} Department Award and any school-specific grants early. Stack multiple smaller scholarships alongside institutional aid for the best package.`,
+  };
+}
+
+function hsFallback() {
+  const s = activeSchool;
+  const { name, grade, interests } = hsState;
+  const gradeNum = parseInt(grade) || 11;
+  const gradYear = new Date().getFullYear() + (12 - gradeNum);
+  return {
+    source_url: `https://${s.url || 'school.edu'}`,
+    source_description: `Sample data for ${s.name}`,
+    match_score: 87,
+    links: { academics:`https://${s.url}/academics`, clubs:`https://${s.url}/clubs`, athletics:`https://${s.url}/athletics`, scholarships:`https://${s.url}/scholarships`, counseling:`https://${s.url}/counseling` },
+    stats: { total_opportunities: 38, clubs_count: 45, scholarships_count: 22, grad_year: gradYear },
+    academic_programs: [
+      { title:'AP Calculus BC', type:'AP Course', description:'College-level calculus covering limits, derivatives, integrals, and series. Exam score of 4+ earns college credit at most universities.', deadline:'Course registration', url:`https://${s.url}/academics` },
+      { title:'AP Biology', type:'AP Course', description:'In-depth biology course covering cell biology, genetics, evolution, and ecology with hands-on lab work.', deadline:'Course registration', url:`https://${s.url}/academics` },
+      { title:'IB Diploma Programme', type:'IB Programme', description:'Two-year internationally recognized diploma program developing critical thinking, research, and global awareness.', deadline:'10th grade application', url:`https://${s.url}/ib` },
+      { title:'Dual Enrollment - College Composition', type:'Dual Enrollment', description:'Earn college English credit while still in high school through a partnership with the local community college.', deadline:'Rolling', url:`https://${s.url}/dualenrollment` },
+      { title:'AP Computer Science A', type:'AP Course', description:'Learn Java programming, algorithms, and data structures. One of the most valuable AP courses for college applications.', deadline:'Course registration', url:`https://${s.url}/academics` },
+    ],
+    career_programs: [
+      { title:'Healthcare & CNA Pathway', type:'CTE Program', description:'Earn a Certified Nursing Assistant license while in high school through this hands-on healthcare CTE pathway.', deadline:'Open enrollment', url:`https://${s.url}/cte` },
+      { title:'Cybersecurity Career Track', type:'CTE Program', description:'Industry certifications in network security, ethical hacking basics, and IT fundamentals. CompTIA Security+ prep included.', deadline:'Fall registration', url:`https://${s.url}/cte` },
+      { title:'Culinary Arts & Hospitality', type:'CTE Program', description:'Professional kitchen training, food safety certification, and business management for restaurant and hospitality careers.', deadline:'Open', url:`https://${s.url}/cte` },
+      { title:'Early Childhood Education', type:'CTE Program', description:'Work in real preschool classrooms and earn college credits through this early education career pathway.', deadline:'Open', url:`https://${s.url}/cte` },
+      { title:'Business & Marketing Pathway', type:'CTE Program', description:'Real-world business skills including marketing, finance basics, and entrepreneurship with DECA competition opportunities.', deadline:'Open', url:`https://${s.url}/cte` },
+    ],
+    clubs: [
+      { title:'National Honor Society', type:'Honor Society', description:`${s.name}'s NHS chapter selects students based on scholarship, service, leadership, and character. Great for college apps.`, deadline:'Junior year', url:`https://${s.url}/clubs` },
+      { title:'Model United Nations', type:'Academic Club', description:'Simulate UN debates on global issues. Compete at regional and national MUN conferences.', deadline:'Open', url:`https://${s.url}/clubs` },
+      { title:'DECA Business Club', type:'Business Club', description:'Business and marketing competition club. State and national championship opportunities.', deadline:'Fall sign-up', url:`https://${s.url}/clubs` },
+      { title:'Environmental Club', type:'Service Club', description:'Campus sustainability initiatives, local environmental advocacy, and community clean-up projects.', deadline:'Open', url:`https://${s.url}/clubs` },
+      { title:'Drama & Theater', type:'Performing Arts', description:'Fall and spring productions, improv workshops, and the annual one-act play competition.', deadline:'Auditions each semester', url:`https://${s.url}/arts` },
+    ],
+    sports: [
+      { title:'Varsity Basketball', type:'Varsity Sport', description:`Competitive program competing in the district. Tryouts each fall — skill and commitment required.`, deadline:'October tryouts', url:`https://${s.url}/athletics` },
+      { title:'Cross Country / Track & Field', type:'Varsity Sport', description:'Fall cross country and spring track. Open to all fitness levels — great for building discipline.', deadline:'August & February', url:`https://${s.url}/athletics` },
+      { title:'Soccer', type:'Varsity Sport', description:'Fall (girls) and spring (boys) seasons. JV and varsity squads with active tournament schedules.', deadline:'Pre-season tryouts', url:`https://${s.url}/athletics` },
+      { title:'Swim Team', type:'Varsity Sport', description:'Competitive swimming program with winter season. State qualifying opportunities for top swimmers.', deadline:'November tryouts', url:`https://${s.url}/athletics` },
+      { title:'Robotics (FIRST FRC)', type:'Competitive Team', description:'Build and program competition robots for FIRST Robotics competitions. Part sport, part engineering challenge.', deadline:'Open year-round', url:`https://${s.url}/clubs` },
+    ],
+    scholarships: [
+      { title:'Principal Scholarship Award', type:'School Scholarship', description:`${s.name}'s highest honor scholarship — $1,000 for graduating seniors with outstanding academic and community records.`, deadline:'March 1', url:`https://${s.url}/scholarships` },
+      { title:'Coca-Cola Scholars Program', type:'National Scholarship', description:'$20,000 scholarship for 150 high school seniors nationwide. Highly competitive — strong leadership required.', deadline:'October 31', url:'https://www.coca-colascholarsfoundation.org' },
+      { title:'Gates Scholarship', type:'National Scholarship', description:'Full scholarship for outstanding minority students with significant financial need. Covers all college costs.', deadline:'September 15', url:'https://www.thegatesscholarship.org' },
+      { title:'QuestBridge National College Match', type:'College Match Program', description:'Links top low-income students with full 4-year scholarships at elite universities. Apply junior year.', deadline:'September 26', url:'https://www.questbridge.org' },
+      { title:'Elks National Foundation', type:'Community Scholarship', description:'$4,000–$50,000 scholarships for students demonstrating leadership, scholarship, and community service.', deadline:'January 5', url:'https://www.elks.org/scholars' },
+    ],
+    schedule: {
+      intro: `A typical day for a ${grade} at ${s.name} starts early and ends with after-school activities.`,
+      registrar_url: `https://${s.url}/academics`,
+      days: [
+        { name:'Monday', type:'Regular Day', blocks:[
+          { time:'7:30 AM', name:'1st Period - English', location:'Room 101', color:'#a855f7', url:`https://${s.url}/academics` },
+          { time:'9:00 AM', name:'2nd Period - Math', location:'Room 204', color:'#ec4899', url:`https://${s.url}/academics` },
+          { time:'10:30 AM', name:'3rd Period - Science', location:'Science Wing', color:'#06b6d4', url:`https://${s.url}/academics` },
+          { time:'12:00 PM', name:'Lunch 🍕', location:'Cafeteria', color:'#34c98a', url:`https://${s.url}` },
+          { time:'1:00 PM', name:'4th Period - History', location:'Room 315', color:'#f59e0b', url:`https://${s.url}/academics` },
+          { time:'2:30 PM', name:'5th Period - Elective', location:'Various', color:'#a855f7', url:`https://${s.url}/academics` },
+          { time:'3:45 PM', name:'After School Club', location:'School Grounds', color:'#34c98a', url:`https://${s.url}/clubs` },
+        ]},
+        { name:'Tuesday', type:'AP / IB Day', blocks:[
+          { time:'7:30 AM', name:'AP Course Block', location:'AP Classroom', color:'#a855f7', url:`https://${s.url}/academics` },
+          { time:'10:00 AM', name:'Study Hall', location:'Library', color:'#06b6d4', url:`https://${s.url}` },
+          { time:'12:00 PM', name:'Lunch with Friends', location:'Cafeteria', color:'#34c98a', url:`https://${s.url}` },
+          { time:'2:00 PM', name:'IB / Honors Class', location:'Room 220', color:'#ec4899', url:`https://${s.url}/academics` },
+          { time:'4:00 PM', name:'Sports Practice', location:'Field/Gym', color:'#f59e0b', url:`https://${s.url}/athletics` },
+        ]},
+        { name:'Wednesday', type:'Activity Day', blocks:[
+          { time:'7:30 AM', name:'Morning Classes', location:'Main Building', color:'#a855f7', url:`https://${s.url}/academics` },
+          { time:'12:00 PM', name:'Club Meeting 🎤', location:'Student Center', color:'#06b6d4', url:`https://${s.url}/clubs` },
+          { time:'2:30 PM', name:'Afternoon Classes', location:'Main Building', color:'#ec4899', url:`https://${s.url}/academics` },
+          { time:'4:00 PM', name:'Game / Match', location:'Stadium / Court', color:'#f59e0b', url:`https://${s.url}/athletics` },
+        ]},
+        { name:'Thursday', type:'Study Day', blocks:[
+          { time:'7:30 AM', name:'Classes', location:'Main Building', color:'#a855f7', url:`https://${s.url}/academics` },
+          { time:'1:00 PM', name:'Counselor Meeting', location:"Counselor's Office", color:'#34c98a', url:`https://${s.url}/counseling` },
+          { time:'3:45 PM', name:'Study Group / Homework', location:'Library', color:'#06b6d4', url:`https://${s.url}` },
+          { time:'6:00 PM', name:'College Research 🎓', location:'Home', color:'#ec4899', url:'https://bigfuture.collegeboard.org' },
+        ]},
+        { name:'Friday', type:'Spirit Day 🎉', blocks:[
+          { time:'7:30 AM', name:'Spirit Day Classes', location:'Main Building', color:'#a855f7', url:`https://${s.url}` },
+          { time:'12:00 PM', name:'Pep Rally / Lunch', location:'Gymnasium', color:'#ec4899', url:`https://${s.url}` },
+          { time:'3:45 PM', name:'Home Game / Event', location:'Stadium', color:'#f59e0b', url:`https://${s.url}/athletics` },
+          { time:'7:00 PM', name:'Weekend starts! 🔥', location:'Wherever life takes you', color:'#34c98a', url:`https://${s.url}` },
+        ]},
+      ],
+      workload:[
+        { label:'Daily Study Hours', value:2, max:6, color:'#a855f7' },
+        { label:'Classes Per Day', value:6, max:8, color:'#ec4899' },
+        { label:'Assignments/Week', value:10, max:20, color:'#06b6d4' },
+        { label:'Activities/Week', value:3, max:7, color:'#34c98a' },
+      ],
+    },
+    college_prep: {
+      sections:[
+        { heading:`Grade ${grade} Priorities`, content:`In ${grade}, focus on ${gradeNum >= 11 ? 'test prep, college visits, and starting your college list. Begin working on essays over the summer.' : 'building strong grades and exploring activities you genuinely enjoy.'}`, url:`https://${s.url}/counseling` },
+        { heading:'SAT / ACT Prep', content:'Start with a diagnostic test to find your baseline score. Use Khan Academy (free) for SAT prep. Most students test 2-3 times for best results.', url:'https://www.khanacademy.org/sat' },
+        { heading:'Building Your College List', content:'Aim for 10-15 colleges: 3 safety schools, 5-7 target schools, and 2-3 reach schools. Research fit, not just rankings.', url:'https://bigfuture.collegeboard.org' },
+        { heading:'Extracurricular Strategy', content:'Quality over quantity. Deep involvement in 2-3 activities beats surface involvement in 10. Leadership positions matter most.', url:`https://${s.url}/clubs` },
+        { heading:'Financial Aid & FAFSA', content:'FAFSA opens October 1 each year. File early — many aid programs have limited funds. Look into CSS Profile for private schools.', url:'https://studentaid.gov' },
+      ],
+      timeline:[
+        { label:'SAT/ACT Prep', pct: gradeNum>=11?70:40 },
+        { label:'Course Rigor (AP/IB)', pct: gradeNum>=10?65:35 },
+        { label:'Extracurricular Leadership', pct: gradeNum>=11?60:30 },
+        { label:'College List Research', pct: gradeNum>=11?55:20 },
+        { label:'Application Essays', pct: gradeNum>=12?80:15 },
+      ],
+    },
+    daily_life: { sections:[
+      { heading:`Morning at ${s.name}`, content:`Students at ${s.name} start the day around 7:30 AM. The hallways are buzzing before first period — quick snacks, catching up with friends, and last-minute homework reviews.`, url:`https://${s.url}` },
+      { heading:'Academic Culture', content:`${s.name} has a ${s.vibes && s.vibes[0] ? s.vibes[0] + ' vibe' : 'driven academic culture'} where students push each other to succeed. Teachers are generally approachable for help.`, url:`https://${s.url}/academics` },
+      { heading:'After-School Scene', content:'After school is when the real magic happens — sports, clubs, and study sessions. Many students hang around campus until 5-6 PM.', url:`https://${s.url}/studentlife` },
+      { heading:`Weekends in ${s.city}`, content:`${s.city} offers plenty for high schoolers — local events, restaurants, parks, and hangout spots. Sports games on Friday nights are a big part of the culture.`, url:`https://${s.url}` },
+    ]},
+    scholarship_advice: `${name}, in ${grade} at ${s.name}, start building your scholarship portfolio now. Create a spreadsheet tracking deadlines for local scholarships (often less competitive) and national programs. The QuestBridge and Gates scholarships are transformative if you qualify. Ask your school counselor about alumni scholarships specific to ${s.name} — they're often underutilized and worth applying for.`,
+  };
+}
+
+// ── DASHBOARD BUILDERS ─────────────────────────
+function buildColDash(d) {
+  const s = activeSchool;
+  if (!visitedSchools.find(v => v.name === s.name && v.mode === 'col'))
+    visitedSchools.push({ ...s, mode:'col', data:d });
+  updateCompareStrip();
+
+  const links = d.links || {};
+  const sUrl  = d.source_url || `https://${s.url}`;
+
+  // Header
+  document.getElementById('cd-icon').textContent = s.em;
+  document.getElementById('cd-name').textContent = s.name;
+
+  const dl = new Date((colState.deadline || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+  const daysLeft = Math.max(0, Math.round((dl - new Date()) / 86400000));
+
+  document.getElementById('cd-pills').innerHTML = [
+    `<span class="pill pill-a">🎓 ${s.name}</span>`,
+    `<span class="pill pill-b">📍 ${s.city}</span>`,
+    `<span class="pill pill-c">📖 ${colState.major}</span>`,
+    `<span class="pill pill-d">📅 ${dl.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>`,
+    `<span class="pill pill-e">👤 ${colState.name}</span>`,
+  ].join('');
+
+  // Source badge
+  document.getElementById('cd-src').innerHTML =
+    `<div class="src-dot"></div>
+     <span>${d.source_description || `Data about ${s.name}`}</span>
+     <a class="src-link" href="${sUrl}" target="_blank" rel="noopener">Visit Official Site ↗</a>`;
+
+  // Match score
+  buildMatchScore('col-match', d.match_score || 82);
+
+  // Deadline alert
+  const alertEl = document.getElementById('col-dl-alert');
+  if (alertEl) {
+    if (daysLeft <= 60) {
+      alertEl.innerHTML = `<span class="dl-icon">⚠️</span><strong>${daysLeft} days left</strong> until your application deadline — ${dl.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`;
+      alertEl.style.display = 'flex';
+    } else {
+      alertEl.style.display = 'none';
+    }
+  }
+
+  // Stats
+  buildStatRow('col-stats', [
+    { val: d.stats?.total_opportunities || '40+', lbl:'Opportunities', cls:'sc-a' },
+    { val: d.stats?.clubs_count || '150+', lbl:'Student Orgs', cls:'sc-b' },
+    { val: d.stats?.scholarships_count || '25+', lbl:'Scholarships', cls:'sc-c' },
+    { val: daysLeft, lbl:'Days to Deadline', cls:'sc-d' },
+  ]);
+
+  // Tab bar
+  buildTabBar('col-tabs', [
+    { l:'🎯 Opportunities', id:'col-t-opp' },
+    { l:'📅 Schedule',      id:'col-t-sched' },
+    { l:'🏛️ Campus Life',   id:'col-t-life' },
+    { l:'💰 Scholarships',  id:'col-t-schol' },
+  ]);
+  switchTab('col-t-opp');
+
+  // Opportunities
+  insertLinkBar('cog-acad', links.academics || sUrl+'/academics', 'Browse Academic Catalog ↗');
+  renderGrid('cog-acad', d.academic_programs, 'ca', s.url);
+  insertLinkBar('cog-res', links.research || sUrl+'/research', 'Browse Research Programs ↗');
+  renderGrid('cog-res', d.research_internships, 'cb', s.url);
+  insertLinkBar('cog-clubs', links.clubs || sUrl+'/studentlife', 'Browse All Student Orgs ↗');
+  renderGrid('cog-clubs', d.clubs, 'cc', s.url);
+
+  // Scholarships
+  insertLinkBar('cog-schol', links.financial_aid || sUrl+'/financialaid', 'Visit Financial Aid Office ↗');
+  renderGrid('cog-schol', d.scholarships, 'ca', s.url);
+  document.getElementById('col-schol-advice').innerHTML = d.scholarship_advice
+    ? `<div class="prose-card">
+         <div class="prose-sec-head"><h3>Strategy for ${colState.name}</h3>
+           <a class="sec-link" href="${links.financial_aid||sUrl+'/financialaid'}" target="_blank">Visit Aid Page ↗</a>
+         </div>
+         <p>${d.scholarship_advice}</p>
+       </div>` : '';
+
+  // Schedule
+  document.getElementById('col-sched-intro').innerHTML =
+    `<h3>A Week as a ${colState.major} Student at ${s.name}</h3><p>${d.schedule?.intro||''}</p>`;
+  buildWeekGrid('col-week', d.schedule?.days||[], d.schedule?.registrar_url||links.registrar);
+  buildWorkload('col-wl', d.schedule?.workload||[]);
+
+  // Campus Life
+  buildProseCard('col-life', d.campus_life?.sections||[]);
+
+  nav('pg-col-dash');
+}
+
+function buildHsDash(d) {
+  const s = activeSchool;
+  const gradeNum = parseInt(hsState.grade) || 11;
+  const gradYear = d.stats?.grad_year || new Date().getFullYear() + (12 - gradeNum);
+  const links = d.links || {};
+  const sUrl  = d.source_url || `https://${s.url||'school.edu'}`;
+
+  if (!visitedSchools.find(v => v.name === s.name && v.mode === 'hs'))
+    visitedSchools.push({ ...s, mode:'hs', data:d });
+  updateCompareStrip();
+
+  // Header
+  document.getElementById('hd-icon').textContent = s.em;
+  document.getElementById('hd-name').textContent = s.name;
+  document.getElementById('hd-pills').innerHTML = [
+    `<span class="pill pill-a">📚 ${s.name}</span>`,
+    `<span class="pill pill-b">📍 ${s.city}</span>`,
+    `<span class="pill pill-c">🎒 ${hsState.grade}</span>`,
+    `<span class="pill pill-d">⭐ ${hsState.interests.slice(0,2).join(', ')||'Explorer'}</span>`,
+    `<span class="pill pill-e">👤 ${hsState.name}</span>`,
+  ].join('');
+
+  document.getElementById('hd-src').innerHTML =
+    `<div class="src-dot"></div>
+     <span>${d.source_description||`Data about ${s.name}`}</span>
+     <a class="src-link" href="${sUrl}" target="_blank" rel="noopener">Visit Official Site ↗</a>`;
+
+  buildMatchScore('hs-match', d.match_score || 87);
+
+  buildStatRow('hs-stats', [
+    { val: d.stats?.total_opportunities || '35+', lbl:'Opportunities', cls:'sc-a' },
+    { val: d.stats?.clubs_count || '40+', lbl:'Clubs & Activities', cls:'sc-b' },
+    { val: d.stats?.scholarships_count || '20+', lbl:'Scholarships', cls:'sc-c' },
+    { val: `'${String(gradYear).slice(-2)}`, lbl:'Graduation Year', cls:'sc-d' },
+  ]);
+
+  buildTabBar('hs-tabs', [
+    { l:'📖 Programs',     id:'hs-t-prog' },
+    { l:'🎭 Activities',   id:'hs-t-act' },
+    { l:'📅 Schedule',     id:'hs-t-sched' },
+    { l:'💰 Scholarships', id:'hs-t-schol' },
+    { l:'🎓 College Prep', id:'hs-t-prep' },
+  ]);
+  switchTab('hs-t-prog');
+
+  // Programs
+  insertLinkBar('hog-acad', links.academics||sUrl+'/academics', 'View Full Course Catalog ↗');
+  renderGrid('hog-acad', d.academic_programs, 'ca', s.url);
+  insertLinkBar('hog-cte', links.cte||sUrl+'/cte', 'Browse Career & CTE Programs ↗');
+  renderGrid('hog-cte', d.career_programs, 'cb', s.url);
+
+  // Activities
+  insertLinkBar('hog-clubs', links.clubs||sUrl+'/studentlife', 'Browse All Clubs ↗');
+  renderGrid('hog-clubs', d.clubs, 'cc', s.url);
+  insertLinkBar('hog-sports', links.athletics||sUrl+'/athletics', 'View Athletics Page ↗');
+  renderGrid('hog-sports', d.sports, 'cd', s.url);
+
+  // Scholarships
+  insertLinkBar('hog-schol', links.scholarships||sUrl+'/scholarships', 'View All Scholarships ↗');
+  renderGrid('hog-schol', d.scholarships, 'ce', s.url);
+  document.getElementById('hs-schol-advice').innerHTML = d.scholarship_advice
+    ? `<div class="prose-card">
+         <div class="prose-sec-head"><h3>Strategy for ${hsState.name}</h3>
+           <a class="sec-link" href="${links.counseling||sUrl}" target="_blank">Visit Counseling ↗</a>
+         </div>
+         <p>${d.scholarship_advice}</p>
+       </div>` : '';
+
+  // Schedule
+  document.getElementById('hs-sched-intro').innerHTML =
+    `<h3>A Day in the Life — ${hsState.grade} at ${s.name}</h3><p>${d.schedule?.intro||''}</p>`;
+  buildWeekGrid('hs-week', d.schedule?.days||[], d.schedule?.registrar_url||links.academics);
+  buildWorkload('hs-wl', d.schedule?.workload||[]);
+
+  // College Prep
+  const prepEl = document.getElementById('hs-prep');
+  if (d.college_prep && prepEl) {
+    let h = '<div class="prose-card">';
+    (d.college_prep.sections||[]).forEach(sec => {
+      const lk = sec.url ? `<a class="sec-link" href="${sec.url}" target="_blank">Visit Page ↗</a>` : '';
+      h += `<div class="prose-sec-head"><h3>${sec.heading}</h3>${lk}</div><p>${sec.content}</p>`;
+    });
+    h += '</div>';
+    prepEl.innerHTML = h;
+    buildPrepTimeline('hs-prep', d.college_prep.timeline||[]);
+  }
+
+  // Daily Life
+  buildProseCard('hs-life', d.daily_life?.sections||[]);
+
+  nav('pg-hs-dash');
+}
+
+// ── UI HELPERS ─────────────────────────────────
+function normaliseUrl(src, fallback) {
+  if (!src) return fallback ? `https://${fallback}` : null;
+  if (src.startsWith('http')) return src;
+  if (src.includes('.')) return `https://${src}`;
+  return fallback ? `https://${fallback}` : null;
+}
+
+function renderGrid(id, items, cls, schoolUrl) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = (items||[]).map(item => {
+    const url = normaliseUrl(item.url||item.source, schoolUrl);
+    const srcTxt = (item.source||'Official Website').replace(/^https?:\/\//,'').split('/').slice(0,2).join('/');
+    const linkHtml = url
+      ? `<a class="oc-link" href="${url}" target="_blank" rel="noopener">View ↗</a>` : '';
+    return `<div class="oc ${cls}">
+      <div class="oc-bar"></div>
+      <div class="oc-type">${item.type||'Opportunity'}</div>
+      <div class="oc-title">${item.title}</div>
+      <div class="oc-desc">${item.description}</div>
+      <div class="oc-foot">
+        <span class="oc-src"><span class="oc-src-dot"></span>${srcTxt}</span>
+        <div style="display:flex;align-items:center;gap:.35rem;flex-wrap:wrap">
+          ${item.deadline ? `<span class="oc-dl">📅 ${item.deadline}</span>` : ''}
+          ${linkHtml}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function insertLinkBar(gridId, url, label) {
+  const el = document.getElementById(gridId);
+  if (!el || !url || url.endsWith('#')) return;
+  // Remove any previous link bar for this grid to prevent duplicates
+  const prev = el.previousElementSibling;
+  if (prev && prev.classList && prev.classList.contains('sec-link-bar')) {
+    prev.remove();
+  }
+  const bar = document.createElement('div');
+  bar.className = 'sec-link-bar';
+  bar.innerHTML = `<a class="sec-link" href="${url}" target="_blank" rel="noopener">${label||'View on Official Site ↗'}</a>`;
+  if (el.parentNode) el.parentNode.insertBefore(bar, el);
+}
+
+function buildWeekGrid(id, days, regUrl) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let html = '';
+  if (regUrl) html += `<div class="sec-link-bar"><a class="sec-link" href="${regUrl}" target="_blank" rel="noopener">📋 View Course Catalog / Registrar ↗</a></div>`;
+  el.innerHTML = html + (days||[]).map(day => {
+    const blocks = (day.blocks||[]).map(b => {
+      const lk = b.url ? `<a class="tb-link" href="${b.url}" target="_blank">↗</a>` : '';
+      return `<div class="tb">
+        <div class="tb-t">${b.time}</div>
+        <div class="tb-dot" style="background:${b.color||'var(--a1)'}"></div>
+        <div class="tb-b"><div class="tb-n">${b.name} ${lk}</div><div class="tb-w">${b.location||''}</div></div>
+      </div>`;
+    }).join('');
+    return `<div class="day-card">
+      <div class="day-hd"><span class="day-nm">${day.name}</span><span class="day-tp">${day.type||''}</span></div>
+      ${blocks}
+    </div>`;
+  }).join('');
+}
+
+function buildWorkload(id, items) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = (items||[]).map(w => {
+    const pct = Math.min(100, Math.round((w.value/w.max)*100));
+    return `<div class="wl-card">
+      <div class="wl-head"><span class="wl-title">${w.label}</span><span class="wl-score" style="color:${w.color}">${w.value}</span></div>
+      <div class="wl-bg"><div class="wl-bar" style="width:0%;background:${w.color}" data-pct="${pct}"></div></div>
+      <div class="wl-note">${pct}% of typical maximum</div>
+    </div>`;
+  }).join('');
+  setTimeout(() => {
+    el.querySelectorAll('.wl-bar').forEach(b => { b.style.width = b.dataset.pct + '%'; });
+  }, 200);
+}
+
+function buildProseCard(id, sections) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `<div class="prose-card">` +
+    (sections||[]).map(s => {
+      const lk = s.url ? `<a class="sec-link" href="${s.url}" target="_blank">Visit Page ↗</a>` : '';
+      return `<div class="prose-sec-head"><h3>${s.heading}</h3>${lk}</div><p>${s.content}</p>`;
+    }).join('') +
+    `</div>`;
+}
+
+function buildPrepTimeline(id, timeline) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let h = '<div class="prep-track"><div class="pt-title">📈 College Prep Progress Tracker</div>';
+  (timeline||[]).forEach(item => {
+    h += `<div class="pt-item">
+      <div class="pt-row"><span class="pt-lbl">${item.label}</span><span class="pt-val">${item.pct}%</span></div>
+      <div class="pt-bg"><div class="pt-bar" style="width:0%" data-pct="${item.pct}"></div></div>
+    </div>`;
+  });
+  h += '</div>';
+  el.innerHTML += h;
+  setTimeout(() => {
+    el.querySelectorAll('.pt-bar').forEach(b => { b.style.width = b.dataset.pct + '%'; });
+  }, 200);
+}
+
+function buildStatRow(id, stats) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = stats.map(s =>
+    `<div class="stat-card ${s.cls}">
+       <div class="stat-val">${s.val}</div>
+       <div class="stat-lbl">${s.lbl}</div>
+     </div>`).join('');
+}
+
+function buildTabBar(id, tabs) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = tabs.map((t, i) =>
+    `<button class="tab-btn${i===0?' on':''}" onclick="switchTab('${t.id}',this)">${t.l}</button>`
+  ).join('');
+}
+
+function switchTab(paneId, btn) {
+  // Determine which dash we're in
+  const prefix = paneId.startsWith('col') ? 'col' : 'hs';
+  document.querySelectorAll(`[id^="${prefix}-t-"]`).forEach(p => p.classList.remove('on'));
+  const pane = document.getElementById(paneId);
+  if (pane) pane.classList.add('on');
+  if (btn) {
+    const bar = btn.closest('.tab-bar');
+    if (bar) bar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+}
+
+function buildMatchScore(id, score) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `
+    <div class="match-wrap">
+      <div class="match-top">
+        <span class="match-lbl">✨ Match Score for ${mode==='col'?colState.name:hsState.name}</span>
+        <span class="match-pct">${score}%</span>
+      </div>
+      <div class="match-bg"><div class="match-fill" style="width:0%" data-pct="${score}"></div></div>
+    </div>`;
+  setTimeout(() => {
+    const fill = el.querySelector('.match-fill');
+    if (fill) fill.style.width = fill.dataset.pct + '%';
+  }, 300);
+}
+
+// ── COMPARE STRIP ──────────────────────────────
+function updateCompareStrip() {
+  const id = mode === 'col' ? 'col-cs-schools' : 'hs-cs-schools';
+  const el = document.getElementById(id);
+  if (!el) return;
+  const schools = visitedSchools.filter(v => v.mode === mode);
+  el.innerHTML = schools.map((s, i) =>
+    `<span class="cs-sch${s.name===activeSchool?.name?' act':''}" onclick="switchToSchool(${i})">
+       <span class="cs-sname">${s.name.split(' ').slice(0,2).join(' ')}</span>
+     </span>`).join('') +
+    `<button class="cs-add" onclick="${mode==='col'?'buildDir();nav(\'pg-dir\')':'buildDir();nav(\'pg-dir\')'}">+ Compare Another</button>`;
+}
+
+function switchToSchool(i) {
+  const schools = visitedSchools.filter(v => v.mode === mode);
+  if (!schools[i]) return;
+  activeSchool = schools[i];
+  if (schools[i].data) {
+    if (mode === 'col') buildColDash(schools[i].data);
+    else buildHsDash(schools[i].data);
+  }
+}
+
+// ── SHARE ──────────────────────────────────────
+function shareResult(m) {
+  const s = activeSchool;
+  const userName = m === 'col' ? colState.name : hsState.name;
+  const score = dashData?.match_score || 80;
+  const text = `🧭 Campus Compass — ${s.name}\n${userName} matched ${score}% with ${s.name} (${s.city})\nDiscover programs, clubs & scholarships → Campus Compass`;
+  if (navigator.share) {
+    navigator.share({ title:`Campus Compass — ${s.name}`, text }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Dashboard summary copied to clipboard! 📋');
+    }).catch(() => {
+      alert(text);
+    });
+  }
+}
+
+window.onload = () => { spawnStars(); };
+
+</script>
+</body>
+</html>
