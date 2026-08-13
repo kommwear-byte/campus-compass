@@ -1,40 +1,41 @@
 // ═══════════════════════════════════════════════
-// Campus Compass Backend
+// Campus Compass Backend (v2 — Node.js Runtime)
 // Runs on Vercel — proxies Exa + Claude calls
 // ═══════════════════════════════════════════════
-
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req) {
-  // Handle CORS preflight (browsers send OPTIONS first)
+ 
+module.exports = async function handler(req, res) {
+  // Set CORS headers on every response
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+ 
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders(),
-    });
+    return res.status(200).end();
   }
-
+ 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed. Use POST.' }, 405);
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
-
+ 
+  const t0 = Date.now();
+ 
   try {
-    const body = await req.json();
-    const { school, city, url, mode } = body;
-
+    const { school, city, url, mode } = req.body;
+    console.log(`[${school}] Starting fetch (mode=${mode})`);
+ 
     if (!school || !mode) {
-      return jsonResponse({ error: 'Missing required fields: school, mode' }, 400);
+      return res.status(400).json({ error: 'Missing required fields: school, mode' });
     }
-
+ 
     const EXA_KEY = process.env.EXA_API_KEY;
     const OR_KEY = process.env.OPENROUTER_API_KEY;
-
+ 
     if (!EXA_KEY || !OR_KEY) {
-      return jsonResponse({ error: 'Server misconfigured — API keys not set' }, 500);
+      console.error('Missing env vars', { hasExa: !!EXA_KEY, hasOR: !!OR_KEY });
+      return res.status(500).json({ error: 'Server misconfigured — API keys not set' });
     }
-
+ 
     // ── Step 1: Run 5 Exa searches in parallel ──
     const isCol = mode === 'col';
     const queries = isCol ? [
@@ -50,21 +51,42 @@ export default async function handler(req) {
       { key: 'sports',       q: `${school} athletics sports teams` },
       { key: 'career',       q: `${school} CTE career technical education programs` },
     ];
-
-    const searchResults = await Promise.all(
-      queries.map(q => runExaSearch(EXA_KEY, q.q).then(r => ({ key: q.key, results: r })))
-    );
-
-    // ── Step 2: Send search results to Claude for structuring ──
-    const structured = await runClaude(OR_KEY, { school, city, url, mode }, searchResults);
-
-    return jsonResponse(structured, 200);
+ 
+    let searchResults;
+    try {
+      searchResults = await Promise.all(
+        queries.map(q =>
+          runExaSearch(EXA_KEY, q.q)
+            .then(r => ({ key: q.key, results: r }))
+            .catch(err => {
+              console.error(`Exa "${q.q}" failed:`, err.message);
+              return { key: q.key, results: [] };
+            })
+        )
+      );
+      console.log(`[${school}] Exa done in ${Date.now() - t0}ms`);
+    } catch (err) {
+      console.error('Exa parallel failed:', err.message);
+      return res.status(500).json({ error: `Exa search failed: ${err.message}` });
+    }
+ 
+    // ── Step 2: Send to Claude ──
+    let structured;
+    try {
+      structured = await runClaude(OR_KEY, { school, city, url, mode }, searchResults);
+      console.log(`[${school}] Total done in ${Date.now() - t0}ms`);
+    } catch (err) {
+      console.error('Claude failed:', err.message);
+      return res.status(500).json({ error: `Claude call failed: ${err.message}` });
+    }
+ 
+    return res.status(200).json(structured);
   } catch (err) {
     console.error('Handler error:', err);
-    return jsonResponse({ error: err.message || 'Server error' }, 500);
+    return res.status(500).json({ error: err.message || 'Server error' });
   }
-}
-
+};
+ 
 // ═══════════════════════════════════════════════
 // EXA SEARCH
 // ═══════════════════════════════════════════════
@@ -77,10 +99,10 @@ async function runExaSearch(key, query) {
     },
     body: JSON.stringify({
       query: query,
-      numResults: 5,
+      numResults: 3,
       type: 'auto',
       contents: {
-        highlights: { numSentences: 3, highlightsPerUrl: 2 },
+        highlights: { numSentences: 2, highlightsPerUrl: 1 },
       },
     }),
   });
@@ -92,10 +114,10 @@ async function runExaSearch(key, query) {
   return (data.results || []).map(r => ({
     title: r.title || '',
     url: r.url || '',
-    highlights: Array.isArray(r.highlights) ? r.highlights.join(' ').substring(0, 500) : '',
+    highlights: Array.isArray(r.highlights) ? r.highlights.join(' ').substring(0, 300) : '',
   }));
 }
-
+ 
 // ═══════════════════════════════════════════════
 // CLAUDE (via OpenRouter)
 // ═══════════════════════════════════════════════
@@ -109,23 +131,23 @@ async function runClaude(key, school, searchResults) {
       ).join('\n\n')
     )
     .join('\n');
-
+ 
   const schema = isCol ? colSchema(school) : hsSchema(school);
   const prompt = `You are structuring data for a student opportunity dashboard about ${school.school} (${school.city}).
-
+ 
 Below are REAL search results from Exa about ${school.school}. Use ONLY facts and URLs from these search results.
-
+ 
 ${searchText}
-
+ 
 Now output STRICT JSON matching this schema:
 ${schema}
-
+ 
 Rules:
 - Every URL must come from the search results above — no made-up URLs
 - If a section has few real results, still include 5-6 items with realistic content
 - Output ONLY JSON, no preamble, no markdown fences
 - Start response with { and end with }`;
-
+ 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -133,8 +155,8 @@ Rules:
       'Authorization': 'Bearer ' + key,
     },
     body: JSON.stringify({
-      model: 'anthropic/claude-sonnet-4.5',
-      max_tokens: 8000,
+      model: 'anthropic/claude-haiku-4.5',
+      max_tokens: 5000,
       messages: [
         { role: 'user', content: prompt },
         { role: 'assistant', content: '{' },
@@ -148,14 +170,14 @@ Rules:
   const data = await res.json();
   let text = data.choices?.[0]?.message?.content || '';
   if (!text.trimStart().startsWith('{')) text = '{' + text;
-
+ 
   try {
     return JSON.parse(text);
   } catch (e) {
     throw new Error('Claude returned invalid JSON: ' + text.substring(0, 200));
   }
 }
-
+ 
 // ═══════════════════════════════════════════════
 // SCHEMAS
 // ═══════════════════════════════════════════════
@@ -190,7 +212,7 @@ function colSchema(s) {
 }
 6+ items each in programs/research/clubs/scholarships.`;
 }
-
+ 
 function hsSchema(s) {
   return `{
   "school": "${s.school}",
@@ -225,24 +247,4 @@ function hsSchema(s) {
 }
 5+ items each.`;
 }
-
-// ═══════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════
-function corsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}
-
-function jsonResponse(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders(),
-    },
-  });
-}
+ 
