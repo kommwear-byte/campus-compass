@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Campus Compass V2 — Exa + Claude Pre-Fetcher</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, sans-serif; background: #0a0c14; color: #e8e6dc; padding: 2rem; line-height: 1.6; }
+.wrap { max-width: 900px; margin: 0 auto; }
+h1 { font-size: 1.8rem; margin-bottom: .3rem; color: #c9a84c; }
+.tag { display: inline-block; background: #3dd6c022; color: #3dd6c0; padding: .2rem .6rem; border-radius: 100px; font-size: .7rem; font-weight: 700; margin-bottom: .5rem; }
+.sub { color: #98928a; margin-bottom: 2rem; font-size: .9rem; }
+.card { background: #12141c; border: 1px solid #22242c; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+.card h3 { margin-bottom: .5rem; font-size: 1rem; color: #c9a84c; }
+input, button { font: inherit; padding: .7rem 1rem; border-radius: 8px; border: 1px solid #22242c; background: #0a0c14; color: #e8e6dc; }
+input { width: 100%; margin-bottom: .8rem; font-family: monospace; font-size: .82rem; }
+label { display: block; font-size: .75rem; color: #98928a; margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .05em; }
+button { background: #c9a84c; color: #0a0c14; font-weight: 700; cursor: pointer; border: none; padding: .8rem 1.5rem; margin-right: .5rem; margin-bottom: .5rem; }
+button:hover { background: #d4b45c; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.danger { background: #e0635a; color: #fff; }
+button.secondary { background: transparent; color: #c9a84c; border: 1px solid #c9a84c; }
+.progress-bg { height: 8px; background: #22242c; border-radius: 100px; overflow: hidden; margin: .5rem 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #c9a84c, #3dd6c0); transition: width .3s; }
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin: 1rem 0; }
+.stat { background: #0a0c14; border: 1px solid #22242c; border-radius: 8px; padding: .8rem; text-align: center; }
+.stat-val { font-size: 1.5rem; font-weight: 700; color: #c9a84c; }
+.stat-lbl { font-size: .7rem; color: #98928a; margin-top: .2rem; text-transform: uppercase; letter-spacing: .05em; }
+.log { background: #05070d; border: 1px solid #22242c; border-radius: 8px; padding: 1rem; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: .75rem; line-height: 1.5; }
+.log-line { padding: .15rem 0; }
+.log-success { color: #3dd6c0; }
+.log-error { color: #e0635a; }
+.log-info { color: #98928a; }
+.log-warn { color: #c9a84c; }
+.log-step { color: #a8a8ff; padding-left: 1rem; }
+textarea { width: 100%; height: 200px; padding: 1rem; background: #05070d; border: 1px solid #22242c; border-radius: 8px; color: #e8e6dc; font-family: monospace; font-size: .7rem; }
+.help { background: #12141c; border-left: 3px solid #c9a84c; padding: 1rem; margin: 1rem 0; font-size: .85rem; }
+.help strong { color: #c9a84c; }
+.stack-badge { display: inline-flex; align-items: center; gap: .4rem; background: #22242c; padding: .3rem .7rem; border-radius: 100px; font-size: .72rem; margin-right: .3rem; margin-top: .3rem; }
+.stack-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="tag">V2 — Exa + Claude</span>
+  <h1>🔧 Campus Compass Pre-Fetcher V2</h1>
+  <div class="sub">Powered by Exa web search + Claude Sonnet 4.5. Gets REAL data from REAL school websites.</div>
+
+  <div style="margin-bottom:1.5rem">
+    <span class="stack-badge"><span class="dot" style="background:#3dd6c0"></span>Exa · Web Search</span>
+    <span class="stack-badge"><span class="dot" style="background:#c9a84c"></span>Claude Sonnet 4.5 · Structuring</span>
+    <span class="stack-badge"><span class="dot" style="background:#a8a8ff"></span>OpenRouter · API Gateway</span>
+  </div>
+
+  <div class="help">
+    <strong>How this works:</strong> For each school, Exa runs 5 real web searches (scholarships, programs, clubs, research, career). Then Claude reads all the results and writes structured JSON with REAL URLs, REAL scholarship amounts, and REAL program names.
+  </div>
+
+  <div class="card">
+    <h3>Step 1: Enter your API keys</h3>
+    <label>Exa API Key (from dashboard.exa.ai)</label>
+    <input id="exa-key" type="password" placeholder="Your Exa API key"/>
+    <label>OpenRouter API Key (for Claude)</label>
+    <input id="or-key" type="password" placeholder="sk-or-v1-..."/>
+    <button onclick="saveKeys()">💾 Save Keys</button>
+    <button class="secondary" onclick="testKeys()">🧪 Test Both Keys</button>
+  </div>
+
+  <div class="card">
+    <h3>Step 2: Choose what to fetch</h3>
+    <button onclick="startFetch('test')" id="btn-test">🧪 Test 3 Schools (Harvard, MIT, Stanford)</button>
+    <button onclick="startFetch('col')" id="btn-col">🎓 All Colleges (60)</button>
+    <button onclick="startFetch('hs')" id="btn-hs">📚 All High Schools (9)</button>
+    <button onclick="startFetch('both')" id="btn-both">🚀 Fetch Everything</button>
+  </div>
+
+  <div class="card">
+    <h3>📊 Progress</h3>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-val" id="s-done">0</div><div class="stat-lbl">Done</div></div>
+      <div class="stat"><div class="stat-val" id="s-fail">0</div><div class="stat-lbl">Failed</div></div>
+      <div class="stat"><div class="stat-val" id="s-eta">--</div><div class="stat-lbl">ETA (min)</div></div>
+    </div>
+    <div class="progress-bg"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <button class="danger" onclick="stopFetch()" id="btn-stop" style="display:none">⏹ Stop</button>
+  </div>
+
+  <div class="card">
+    <h3>📝 Live Log</h3>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="card">
+    <h3>💾 Step 3: Copy the result</h3>
+    <div class="sub">Once done, click "Copy JSON" or "Download" — then I'll help you paste it into your app.</div>
+    <button onclick="copyResult()">📋 Copy JSON</button>
+    <button onclick="downloadResult()">💾 Download .json file</button>
+    <button class="secondary" onclick="clearResult()">🗑️ Clear All</button>
+    <textarea id="result" readonly placeholder="Results will appear here after fetching..."></textarea>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// SCHOOL DATA
+// ═══════════════════════════════════════
+const COL_DIR = [
+  { schools:[
+    { name:'Harvard University', city:'Cambridge, MA', url:'harvard.edu' },
+    { name:'Yale University', city:'New Haven, CT', url:'yale.edu' },
+    { name:'Princeton University', city:'Princeton, NJ', url:'princeton.edu' },
+    { name:'Columbia University', city:'New York, NY', url:'columbia.edu' },
+    { name:'University of Pennsylvania', city:'Philadelphia, PA', url:'upenn.edu' },
+    { name:'Brown University', city:'Providence, RI', url:'brown.edu' },
+    { name:'Dartmouth College', city:'Hanover, NH', url:'dartmouth.edu' },
+    { name:'Cornell University', city:'Ithaca, NY', url:'cornell.edu' },
+    { name:'MIT', city:'Cambridge, MA', url:'mit.edu' },
+    { name:'Stanford University', city:'Stanford, CA', url:'stanford.edu' },
+    { name:'Caltech', city:'Pasadena, CA', url:'caltech.edu' },
+    { name:'Duke University', city:'Durham, NC', url:'duke.edu' },
+    { name:'Johns Hopkins University', city:'Baltimore, MD', url:'jhu.edu' },
+    { name:'Northwestern University', city:'Evanston, IL', url:'northwestern.edu' },
+    { name:'Vanderbilt University', city:'Nashville, TN', url:'vanderbilt.edu' },
+    { name:'Rice University', city:'Houston, TX', url:'rice.edu' },
+    { name:'Notre Dame', city:'Notre Dame, IN', url:'nd.edu' },
+    { name:'Georgetown University', city:'Washington, DC', url:'georgetown.edu' },
+    { name:'WashU St. Louis', city:'St. Louis, MO', url:'wustl.edu' },
+    { name:'Emory University', city:'Atlanta, GA', url:'emory.edu' },
+    { name:'Tufts University', city:'Medford, MA', url:'tufts.edu' },
+    { name:'Carnegie Mellon', city:'Pittsburgh, PA', url:'cmu.edu' },
+    { name:'Boston University', city:'Boston, MA', url:'bu.edu' },
+    { name:'Northeastern University', city:'Boston, MA', url:'northeastern.edu' },
+    { name:'UC Berkeley', city:'Berkeley, CA', url:'berkeley.edu' },
+    { name:'UCLA', city:'Los Angeles, CA', url:'ucla.edu' },
+    { name:'UC San Diego', city:'La Jolla, CA', url:'ucsd.edu' },
+    { name:'University of Michigan', city:'Ann Arbor, MI', url:'umich.edu' },
+    { name:'UT Austin', city:'Austin, TX', url:'utexas.edu' },
+    { name:'UVA', city:'Charlottesville, VA', url:'virginia.edu' },
+    { name:'UNC Chapel Hill', city:'Chapel Hill, NC', url:'unc.edu' },
+    { name:'Georgia Tech', city:'Atlanta, GA', url:'gatech.edu' },
+    { name:'University of Florida', city:'Gainesville, FL', url:'ufl.edu' },
+    { name:'University of Washington', city:'Seattle, WA', url:'uw.edu' },
+    { name:'Penn State', city:'State College, PA', url:'psu.edu' },
+    { name:'Ohio State', city:'Columbus, OH', url:'osu.edu' },
+    { name:'Purdue University', city:'West Lafayette, IN', url:'purdue.edu' },
+    { name:'Texas A&M', city:'College Station, TX', url:'tamu.edu' },
+    { name:'Florida State', city:'Tallahassee, FL', url:'fsu.edu' },
+    { name:'ASU', city:'Tempe, AZ', url:'asu.edu' },
+    { name:'Howard University', city:'Washington, DC', url:'howard.edu' },
+    { name:'Morehouse College', city:'Atlanta, GA', url:'morehouse.edu' },
+    { name:'Spelman College', city:'Atlanta, GA', url:'spelman.edu' },
+    { name:'Hampton University', city:'Hampton, VA', url:'hamptonu.edu' },
+    { name:'FAMU', city:'Tallahassee, FL', url:'famu.edu' },
+    { name:'Xavier of Louisiana', city:'New Orleans, LA', url:'xula.edu' },
+    { name:'Tuskegee University', city:'Tuskegee, AL', url:'tuskegee.edu' },
+    { name:'NC A&T', city:'Greensboro, NC', url:'ncat.edu' },
+    { name:'Williams College', city:'Williamstown, MA', url:'williams.edu' },
+    { name:'Amherst College', city:'Amherst, MA', url:'amherst.edu' },
+    { name:'Middlebury College', city:'Middlebury, VT', url:'middlebury.edu' },
+    { name:'Swarthmore', city:'Swarthmore, PA', url:'swarthmore.edu' },
+    { name:'Wellesley College', city:'Wellesley, MA', url:'wellesley.edu' },
+    { name:'Bowdoin College', city:'Brunswick, ME', url:'bowdoin.edu' },
+    { name:'Oberlin College', city:'Oberlin, OH', url:'oberlin.edu' },
+    { name:'Reed College', city:'Portland, OR', url:'reed.edu' },
+  ]},
+];
+
+const HS_DIR = [
+  { schools:[
+    { name:'Westlake High School', city:'Austin, TX', url:'austinisd.org' },
+    { name:'Allen High School', city:'Allen, TX', url:'allenisd.org' },
+    { name:'Plano Senior High', city:'Plano, TX', url:'pisd.edu' },
+    { name:'Katy High School', city:'Katy, TX', url:'katyisd.org' },
+    { name:'Lowell High School', city:'San Francisco, CA', url:'sfusd.edu' },
+    { name:'Lynbrook High School', city:'San Jose, CA', url:'fuhsd.org' },
+    { name:'Stuyvesant High School', city:'New York, NY', url:'stuy.edu' },
+    { name:'Brooklyn Tech', city:'Brooklyn, NY', url:'bths.edu' },
+    { name:'Bronx Science', city:'Bronx, NY', url:'bxscience.edu' },
+  ]},
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let exaKey = '';
+let orKey = '';
+let results = {};
+let stopFlag = false;
+let startTime = 0;
+let totalCount = 0;
+let doneCount = 0;
+let failCount = 0;
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  exaKey = localStorage.getItem('cc_v2_exa_key') || '';
+  orKey = localStorage.getItem('cc_v2_or_key') || '';
+  if (exaKey) document.getElementById('exa-key').value = exaKey;
+  if (orKey) document.getElementById('or-key').value = orKey;
+  results = JSON.parse(localStorage.getItem('cc_v2_results') || '{}');
+  log(`Loaded ${Object.keys(results).length} previously fetched schools`, 'info');
+  updateResultBox();
+});
+
+function saveKeys() {
+  exaKey = document.getElementById('exa-key').value.trim();
+  orKey = document.getElementById('or-key').value.trim();
+  localStorage.setItem('cc_v2_exa_key', exaKey);
+  localStorage.setItem('cc_v2_or_key', orKey);
+  log(`✅ Keys saved`, 'success');
+}
+
+async function testKeys() {
+  saveKeys();
+  if (!exaKey || !orKey) {
+    log('❌ Enter both keys first', 'error');
+    return;
+  }
+  log('🧪 Testing Exa key...', 'info');
+  try {
+    const exaRes = await fetch('https://api.exa.ai/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': exaKey,
+      },
+      body: JSON.stringify({
+        query: 'Harvard University',
+        numResults: 1,
+        type: 'auto',
+      }),
+    });
+    if (exaRes.ok) {
+      log('✅ Exa key works!', 'success');
+    } else {
+      const err = await exaRes.text();
+      log(`❌ Exa key failed: ${exaRes.status} - ${err.substring(0, 100)}`, 'error');
+      return;
+    }
+  } catch (e) {
+    log(`❌ Exa network error: ${e.message}`, 'error');
+    return;
+  }
+
+  log('🧪 Testing OpenRouter (Claude) key...', 'info');
+  try {
+    const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + orKey,
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-sonnet-4.5',
+        max_tokens: 20,
+        messages: [{ role: 'user', content: 'Say "hi" only.' }],
+      }),
+    });
+    if (orRes.ok) {
+      const data = await orRes.json();
+      const reply = data.choices?.[0]?.message?.content || '';
+      log(`✅ Claude key works! Claude said: "${reply.trim()}"`, 'success');
+      log('🎉 Both keys are ready! You can now fetch schools.', 'success');
+    } else {
+      const err = await orRes.text();
+      log(`❌ Claude key failed: ${orRes.status} - ${err.substring(0, 150)}`, 'error');
+    }
+  } catch (e) {
+    log(`❌ Claude network error: ${e.message}`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// FETCH ORCHESTRATION
+// ═══════════════════════════════════════
+async function startFetch(mode) {
+  saveKeys();
+  if (!exaKey || !orKey) { alert('Enter BOTH API keys first!'); return; }
+  stopFlag = false;
+
+  let schools = [];
+  if (mode === 'col' || mode === 'both') {
+    COL_DIR.forEach(cat => cat.schools.forEach(s => schools.push({ ...s, mode: 'col' })));
+  }
+  if (mode === 'hs' || mode === 'both') {
+    HS_DIR.forEach(cat => cat.schools.forEach(s => schools.push({ ...s, mode: 'hs' })));
+  }
+  if (mode === 'test') {
+    schools = [
+      { name: 'Harvard University', city: 'Cambridge, MA', url: 'harvard.edu', mode: 'col' },
+      { name: 'MIT', city: 'Cambridge, MA', url: 'mit.edu', mode: 'col' },
+      { name: 'Stanford University', city: 'Stanford, CA', url: 'stanford.edu', mode: 'col' },
+    ];
+  }
+
+  // Skip already-fetched
+  schools = schools.filter(s => !results[s.mode + ':' + s.name]);
+  totalCount = schools.length;
+  doneCount = 0;
+  failCount = 0;
+  startTime = Date.now();
+
+  document.getElementById('s-total').textContent = totalCount;
+  document.getElementById('btn-stop').style.display = 'inline-block';
+  ['btn-col','btn-hs','btn-both','btn-test'].forEach(id => document.getElementById(id).disabled = true);
+
+  log(`🚀 Starting Exa + Claude fetch of ${totalCount} schools...`, 'success');
+
+  for (const school of schools) {
+    if (stopFlag) { log('⏹ Stopped by user', 'warn'); break; }
+    await fetchOne(school);
+    updateProgress();
+    await new Promise(r => setTimeout(r, 500)); // delay between schools
+  }
+
+  log(`\n🎉 Done! ${doneCount}/${totalCount} succeeded, ${failCount} failed`, 'success');
+  ['btn-col','btn-hs','btn-both','btn-test'].forEach(id => document.getElementById(id).disabled = false);
+  document.getElementById('btn-stop').style.display = 'none';
+  updateResultBox();
+}
+
+async function fetchOne(school) {
+  const key = school.mode + ':' + school.name;
+  log(`\n⏳ ${school.name}`, 'info');
+
+  try {
+    // 5 parallel Exa searches
+    const isCol = school.mode === 'col';
+    const queries = isCol ? [
+      { key: 'scholarships',  q: `${school.name} scholarships financial aid grants` },
+      { key: 'programs',      q: `${school.name} academic programs majors departments` },
+      { key: 'clubs',         q: `${school.name} student organizations clubs activities` },
+      { key: 'research',      q: `${school.name} undergraduate research opportunities internships` },
+      { key: 'career',        q: `${school.name} career center internships shadowing programs` },
+    ] : [
+      { key: 'scholarships',  q: `${school.name} ${school.city} scholarships financial aid` },
+      { key: 'programs',      q: `${school.name} AP courses IB program academics` },
+      { key: 'clubs',         q: `${school.name} clubs student organizations activities` },
+      { key: 'sports',        q: `${school.name} athletics sports teams` },
+      { key: 'career',        q: `${school.name} CTE career technical education programs` },
+    ];
+
+    log(`  🔍 Running 5 Exa searches...`, 'step');
+    const searchResults = await Promise.all(queries.map(q => runExaSearch(q.q).then(r => ({ key: q.key, results: r }))));
+
+    let totalSnippets = 0;
+    searchResults.forEach(sr => { totalSnippets += sr.results.length; });
+    log(`  ✅ Got ${totalSnippets} snippets from Exa`, 'step');
+
+    // Build Claude prompt
+    log(`  🤖 Sending to Claude for structuring...`, 'step');
+    const claudeResp = await runClaude(school, searchResults);
+    log(`  ✅ Claude returned ${claudeResp.length} chars`, 'step');
+
+    // Parse JSON
+    const parsed = JSON.parse(claudeResp);
+
+    // Store
+    results[key] = parsed;
+    localStorage.setItem('cc_v2_results', JSON.stringify(results));
+    doneCount++;
+    log(`✅ ${school.name} — SAVED`, 'success');
+  } catch (err) {
+    failCount++;
+    log(`❌ ${school.name}: ${err.message}`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// EXA SEARCH
+// ═══════════════════════════════════════
+async function runExaSearch(query) {
+  const res = await fetch('https://api.exa.ai/search', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': exaKey,
+    },
+    body: JSON.stringify({
+      query: query,
+      numResults: 5,
+      type: 'auto',
+      contents: {
+        highlights: true,
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`Exa ${res.status}`);
+  const data = await res.json();
+  return (data.results || []).map(r => ({
+    title: r.title || '',
+    url: r.url || '',
+    highlights: (r.highlights || []).join(' ').substring(0, 500),
+  }));
+}
+
+// ═══════════════════════════════════════
+// CLAUDE CALL
+// ═══════════════════════════════════════
+async function runClaude(school, searchResults) {
+  const isCol = school.mode === 'col';
+  const searchText = searchResults.map(sr =>
+    `\n=== ${sr.key.toUpperCase()} SEARCH ===\n` +
+    sr.results.map((r, i) =>
+      `[${i+1}] ${r.title}\nURL: ${r.url}\nExcerpt: ${r.highlights}`
+    ).join('\n\n')
+  ).join('\n');
+
+  const schema = isCol ? colSchema(school) : hsSchema(school);
+  const prompt = `You are structuring data for a student opportunity dashboard about ${school.name} (${school.city}).
+
+Below are REAL search results from ${school.name}'s website and related pages. Use ONLY facts and URLs from these search results.
+
+${searchText}
+
+Now output STRICT JSON matching this schema:
+${schema}
+
+Rules:
+- Every URL must come from the search results above — no made-up URLs
+- If you can't find real info for a section, include 3 items minimum with realistic content
+- Output ONLY JSON, no preamble, no markdown fences
+- Start response with { and end with }`;
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + orKey,
+    },
+    body: JSON.stringify({
+      model: 'anthropic/claude-sonnet-4.5',
+      max_tokens: 8000,
+      messages: [
+        { role: 'user', content: prompt },
+        { role: 'assistant', content: '{' }, // Prefill to force JSON
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Claude ${res.status}: ${errText.substring(0, 100)}`);
+  }
+  const data = await res.json();
+  let text = data.choices?.[0]?.message?.content || '';
+  // Re-add the { prefill
+  if (!text.trimStart().startsWith('{')) text = '{' + text;
+  return text;
+}
+
+function colSchema(s) {
+  return `{
+  "school": "${s.name}",
+  "city": "${s.city}",
+  "url": "https://${s.url}",
+  "overview": "2-3 sentences about the school",
+  "programs": [
+    { "title": "Real major/program name", "type": "Academic Program", "description": "2 sentences with specifics", "url": "real URL from search results" }
+  ],
+  "research": [
+    { "title": "Real research program name", "type": "Research", "description": "2 sentences", "deadline": "date or 'Rolling'", "url": "real URL" }
+  ],
+  "clubs": [
+    { "title": "Real student org name", "type": "Student Org", "description": "2 sentences", "url": "real URL" }
+  ],
+  "scholarships": [
+    { "title": "Real scholarship name", "type": "Scholarship", "description": "2 sentences with dollar amount", "deadline": "real deadline", "url": "real URL" }
+  ],
+  "schedule": {
+    "intro": "1-2 sentences about typical week",
+    "sample_courses": ["Real course name", "Real course", "Real course", "Real course"]
+  },
+  "campus_life": [
+    { "heading": "Academic Culture", "content": "2 sentences about ${s.name}" },
+    { "heading": "Social Scene", "content": "2 sentences" },
+    { "heading": "Living in ${s.city}", "content": "2 sentences" }
+  ],
+  "stats": { "programs": 40, "clubs": 150, "scholarships": 25 }
+}
+6 items minimum in programs/research/clubs/scholarships arrays.`;
+}
+
+function hsSchema(s) {
+  return `{
+  "school": "${s.name}",
+  "city": "${s.city}",
+  "url": "https://${s.url}",
+  "overview": "2-3 sentences",
+  "programs": [
+    { "title": "Real AP/IB course", "type": "AP Course", "description": "2 sentences", "url": "real URL" }
+  ],
+  "career": [
+    { "title": "Real CTE program", "type": "CTE", "description": "2 sentences", "url": "real URL" }
+  ],
+  "clubs": [
+    { "title": "Real club name", "type": "Club", "description": "2 sentences", "url": "real URL" }
+  ],
+  "sports": [
+    { "title": "Sport name", "type": "Varsity", "description": "2 sentences", "url": "real URL" }
+  ],
+  "scholarships": [
+    { "title": "Scholarship name", "type": "Scholarship", "description": "2 sentences", "url": "real URL" }
+  ],
+  "schedule": {
+    "intro": "1-2 sentences",
+    "sample_courses": ["Course 1", "Course 2", "Course 3", "Course 4"]
+  },
+  "campus_life": [
+    { "heading": "Academic Culture", "content": "2 sentences" },
+    { "heading": "After School Life", "content": "2 sentences" },
+    { "heading": "Living in ${s.city}", "content": "2 sentences" }
+  ],
+  "stats": { "programs": 35, "clubs": 40, "scholarships": 20 }
+}
+5 items minimum each.`;
+}
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+function updateProgress() {
+  const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  document.getElementById('s-done').textContent = doneCount;
+  document.getElementById('s-fail').textContent = failCount;
+  document.getElementById('prog').style.width = pct + '%';
+  const elapsed = (Date.now() - startTime) / 1000;
+  const rate = doneCount / elapsed;
+  const remaining = totalCount - doneCount;
+  const eta = Math.round((remaining / rate) / 60);
+  document.getElementById('s-eta').textContent = isFinite(eta) ? eta : '--';
+}
+
+function log(msg, level = 'info') {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = 'log-line log-' + level;
+  const time = new Date().toLocaleTimeString();
+  line.textContent = `[${time}] ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateResultBox() {
+  const count = Object.keys(results).length;
+  document.getElementById('result').value = count > 0 ? JSON.stringify(results, null, 2) : '';
+  if (count > 0) log(`💾 ${count} schools currently stored`, 'info');
+}
+
+function copyResult() {
+  const t = document.getElementById('result');
+  t.select();
+  document.execCommand('copy');
+  alert(`Copied ${Object.keys(results).length} schools to clipboard!`);
+}
+
+function downloadResult() {
+  const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'campus-compass-data-v2.json';
+  a.click();
+}
+
+function clearResult() {
+  if (!confirm('Delete all fetched data? (Cannot be undone)')) return;
+  results = {};
+  localStorage.removeItem('cc_v2_results');
+  updateResultBox();
+  log('🗑️ Data cleared', 'warn');
+}
+
+function stopFetch() {
+  stopFlag = true;
+  log('⏹ Stopping after current school...', 'warn');
+}
+</script>
+</body>
+</html>
